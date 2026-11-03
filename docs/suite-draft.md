@@ -55,11 +55,21 @@ The verifier obtains the suite, n, t, ordered roster, generator context, and mes
 
 At the maximum n, the signature is below 5 MiB with these encodings. Limit encoded signatures to 5 MiB and messages to 16 MiB before allocation; reject larger inputs. These suite limits are implementation choices, not bounds claimed by the audit. Actual serialized lengths, including framing and identity-point encodings, must be measured in benchmarks rather than inferred from the audit's abstract size formula.
 
+## Signer state and crash behavior proposal
+
+Each signing key has one persistent used-session-ID set shared by every process and roster using that key. A session ID is a nonempty byte string of at most 256 bytes; equality means exact byte equality. The store must support an atomic, durable insert-if-absent and serialize competing requests. Reuse remains forbidden across restarts and roster changes. The application must provide rollback-resistant storage or retire the key after any restore or suspected rollback; an ordinary database backup alone cannot guarantee uniqueness.
+
+Round 1 first validates the signer index, threshold, roster, subset, message length and nonidentity Qe. It then atomically reserves sid and waits for durable confirmation before sampling nonzero nonces, recording immutable ctx and returning commitments. A failed or uncertain reservation fails closed; never return commitments until reservation is known durable. If sampling or any subsequent operation fails, sid remains spent. The implementation retains live nonce scalars only in protected process memory, not in the durable replay store.
+
+Round 2 must atomically claim the live session before checking its immutable context and aggregate points, so at most one request can use the nonce pair. After validation, it follows Algorithm 1 exactly, erases the nonce pair before returning a response, and permanently closes the session. Any malformed request, changed context, invalid point, identity aggregate, computation error, timeout, cancellation, or shutdown closes the session and erases live nonce state. An unknown or already claimed session fails without a response scalar. Concurrent round-2 calls cannot both succeed.
+
+On process restart all sessions formerly live are aborted and their IDs remain spent; never reconstruct or resume their nonce state. Memory wiping is best effort in ordinary software and requires backend and compiler review; this design does not promise physical erasure. If durable reservation, concurrency control, or rollback resistance is unavailable, fail closed rather than claiming crash-safe signing. These operational rules instantiate Algorithm 1's permanent sid and one-use requirements; they do not add a same-session agreement guarantee.
+
 ## Remaining specification gates
 
 1. Independently review the transcript proposal against the PDF and generate deterministic vectors for every encoding and oracle, including rejection cases.
 2. Review proof and signature layouts and test all parser rejection behavior against independent vectors.
-3. Specify permanent session-ID replay prevention and nonce erasure across crashes. Fail closed if durable state cannot be guaranteed.
+3. Independently review the signer-state design and test crashes, uncertain writes, concurrent calls, and storage rollback handling.
 4. Validate the selected backend, hash-to-curve vectors, side-channel properties, and toolchain before freezing the suite. Practical PoP remains a heuristic, not proof of ideal extractable registration.
 
 The signer does not establish that the coordinator's masked key is linked to the chosen subset; audit §4.1 explicitly leaves that check to final verification. The audit does not establish same-session agreement, adaptive-corruption security, or full interactive-transcript signer privacy.
