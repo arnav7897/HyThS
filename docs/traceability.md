@@ -5,7 +5,7 @@ Status: specification work; no protocol implementation or independently validate
 | Audit reference | Required behavior | Implementation and test status |
 | --- | --- | --- |
 | §2.1, (1)–(2) | Prime-order group; canonical typed encodings; dimensions and parameter bounds. Intermediate proof commitments may be identity. | Draft suite dimensions tested exhaustively for allowed n; framing and scalar checks exist. Group validation, independent vectors and full parser tests pending. |
-| Definition 2.1, (3) | Derive exactly 2N+1 nonidentity generators in the specified order from suite, context, N, and index. | Draft RFC 9380 suite proposed; implementation and independent vectors pending. |
+| Definition 2.1, (3) | Derive exactly 2N+1 nonidentity generators in the specified order from suite, context, N, and index. | RFC 9380 SHA-256 expand_message_xmd is implemented and checked against published expander vectors; hash-to-field, curve mapping, generator derivation and independent suite vectors remain pending. |
 | Assumption 3.1, (4) | Ordered distinct nonidentity roster; ideal extractable registration in proofs. PoP is a heuristic practical proposal. | Registration design and tests pending. |
 | (5)–(7) | Bind ordered roster, threshold, message, subset and masked key into the specified contexts. Resample identity masked keys. | Encoding and tests pending. |
 | Algorithm 1, (8)–(10) | Reject reused session IDs and invalid inputs; maintain immutable context and erase one-use nonces on completion or abort; verify Schnorr equation. | Toy additive-group test exercises the signing equation; state persistence and real implementation tests pending. |

@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 project(hta_schnorr LANGUAGES CXX)
 
+find_package(OpenSSL 3 REQUIRED COMPONENTS Crypto)
+
 set(HTA_INSTRUMENTATION "none" CACHE STRING "Build instrumentation: none, asan-ubsan, tsan, coverage, fuzz")
 set_property(CACHE HTA_INSTRUMENTATION PROPERTY STRINGS none asan-ubsan tsan coverage fuzz)
 if(HTA_INSTRUMENTATION STREQUAL "asan-ubsan")
@@ -39,3 +41,11 @@ target_compile_features(hta_parameters PUBLIC cxx_std_17)
 add_executable(parameters_test tests/parameters_test.cpp)
 target_link_libraries(parameters_test PRIVATE hta_parameters)
 add_test(NAME parameters COMMAND parameters_test)
+
+add_library(hta_expand_message src/expand_message.cpp)
+target_include_directories(hta_expand_message PUBLIC include)
+target_compile_features(hta_expand_message PUBLIC cxx_std_17)
+target_link_libraries(hta_expand_message PRIVATE OpenSSL::Crypto)
+add_executable(expand_message_test tests/expand_message_test.cpp)
+target_link_libraries(expand_message_test PRIVATE hta_expand_message)
+add_test(NAME expand_message COMMAND expand_message_test)

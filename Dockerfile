@@ -4,7 +4,7 @@ RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates=20260816ubuntu0.24.04.1 \
     && apt-get -S 20261001T000000Z update \
     && DEBIAN_FRONTEND=noninteractive apt-get -S 20261001T000000Z install -y --no-install-recommends \
-    clang cmake g++ libclang-rt-18-dev make python3 \
+    clang cmake g++ libclang-rt-18-dev libssl-dev make python3 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
