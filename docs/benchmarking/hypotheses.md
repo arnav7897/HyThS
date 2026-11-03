@@ -6,6 +6,8 @@ Registered 2026-11-03, before protocol performance measurements. These are predi
 
 Compare within the same curve family, machine, compiler configuration, and backend where possible. Report upstream implementations separately, including language and implementation differences. Measure actual serialized bytes and raw timings. Separate cold setup from warm execution, signer cost from coordinator and verifier cost, and sequential elapsed time from measured parallel critical path. Record n, t, signer count, scheme, version, curve, backend, platform, build flags, cache state, and secret-scalar timing mode. Report setup and security assumptions alongside results; unavailable comparisons are N/A.
 
+**2026-11-03 clarification, before measurements:** Preserve each baseline's specified hash, transcript, encoding and protocol behavior. A shared backend or measurement harness must not silently change a standardized scheme. Label and separately report any modified variant; verify baseline implementations against the applicable published vectors before comparison.
+
 For each configuration, capture environment and immutable source revisions, warm up, then collect at least 30 timed samples across at least five process launches. Randomize configuration order, preserve raw results and configuration, and report distributions and confidence intervals. Treat the process launch as the independent unit where appropriate. Do not substitute toy-group timings for real cryptographic measurements.
 
 ## Predictions
