@@ -1,0 +1,10 @@
+# Local planning and agent context
+plan.md
+AGENTS.md
+decision.md
+flow.md
+
+# Generated files
+build/
+__pycache__/
+*.pyc
