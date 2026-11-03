@@ -40,10 +40,25 @@ Uppercase transcript names in the table represent the full encoded bytes from th
 
 For POP, NON, SIG, Y, Z, and X, calculate SHA-256 over `T("SCALAR", B(transcript), U(counter))`, with counter initially zero. Interpret the 32-byte digest as an integer; accept if less than q, additionally requiring nonzero for Y, Z and X. Otherwise increment counter and retry; fail on 64-bit overflow. Under a random-oracle idealization this is uniform in the respective range. Secrets use an independently supplied cryptographic random source and unbiased sampling, not this public hash procedure.
 
+## Proof and signature encoding proposal
+
+Given n and therefore N from the authenticated verification context, encode audit Algorithm 2's output and equation (20) as:
+
+```
+proof = T("PROOF", P(A), P(Scom), P(Qs), P(T1), P(T2),
+          V(Q(vL_1),...,Q(vL_N)), V(Q(vR_1),...,Q(vR_N)),
+          Q(t_hat), Q(mu), Q(tau_x))
+signature = T("SIGNATURE", P(Qe), P(R), Q(s_e), B(proof))
+```
+
+The verifier obtains the suite, n, t, ordered roster, generator context, and message independently; none is inferred from the signature. It recomputes CPK and the generators from that context. Each vector must contain exactly N scalars. Reject a wrong suite or label, wrong field count or type, malformed or noncanonical point or scalar, wrong vector length, overlong or truncated length, and any trailing bytes at every nested level. Reject identity Qe and R; accept identity in A, Scom, Qs, T1, and T2 when all verification equations hold. Parsing success alone never implies signature validity: verify the Schnorr equation and all four authorization checks.
+
+At the maximum n, the signature is below 5 MiB with these encodings. Limit encoded signatures to 5 MiB and messages to 16 MiB before allocation; reject larger inputs. These suite limits are implementation choices, not bounds claimed by the audit. Actual serialized lengths, including framing and identity-point encodings, must be measured in benchmarks rather than inferred from the audit's abstract size formula.
+
 ## Remaining specification gates
 
 1. Independently review the transcript proposal against the PDF and generate deterministic vectors for every encoding and oracle, including rejection cases.
-2. Define serialized proof and signature layouts, limits, and complete parser rejection behavior.
+2. Review proof and signature layouts and test all parser rejection behavior against independent vectors.
 3. Specify permanent session-ID replay prevention and nonce erasure across crashes. Fail closed if durable state cannot be guaranteed.
 4. Validate the selected backend, hash-to-curve vectors, side-channel properties, and toolchain before freezing the suite. Practical PoP remains a heuristic, not proof of ideal extractable registration.
 
