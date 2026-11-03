@@ -8,6 +8,8 @@ Compare within the same curve family, machine, compiler configuration, and backe
 
 **2026-11-03 clarification, before measurements:** Preserve each baseline's specified hash, transcript, encoding and protocol behavior. A shared backend or measurement harness must not silently change a standardized scheme. Label and separately report any modified variant; verify baseline implementations against the applicable published vectors before comparison.
 
+**2026-11-03 setup clarification, before measurements:** [RFC 9591](https://www.rfc-editor.org/rfc/rfc9591.html) specifies FROST signing and provides a trusted-dealer example; it does not require a particular DKG. Identify and measure the selected DKG or dealer separately, including its trust assumptions. RFC 9591 is an Informational RFC, not an IETF standard. H5's no-interaction prediction applies to this protocol's setup and does not imply DKG is the only FROST setup option.
+
 For each configuration, capture environment and immutable source revisions, warm up, then collect at least 30 timed samples across at least five process launches. Randomize configuration order, preserve raw results and configuration, and report distributions and confidence intervals. Treat the process launch as the independent unit where appropriate. Do not substitute toy-group timings for real cryptographic measurements.
 
 ## Predictions
