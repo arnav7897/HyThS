@@ -76,6 +76,6 @@ jobs:
           for build in first second; do
             docker build --no-cache --provenance=false -t "hta-check:$build" .
             docker run --rm "hta-check:$build" sh -c \
-              "dpkg-query -W -f='\${binary:Package}=\${Version}\n' | LC_ALL=C sort; sha256sum /src/build/debug/scaffold_smoke /src/build/debug/framing_test /src/build/debug/parameters_test /src/build/debug/expand_message_test" > "/tmp/hta-$build.txt"
+              "dpkg-query -W -f='\${binary:Package}=\${Version}\n' | LC_ALL=C sort; sha256sum /src/build/debug/scaffold_smoke /src/build/debug/framing_test /src/build/debug/parameters_test /src/build/debug/expand_message_test /src/build/debug/scalar_challenge_test" > "/tmp/hta-$build.txt"
           done
           diff -u /tmp/hta-first.txt /tmp/hta-second.txt
