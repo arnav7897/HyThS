@@ -52,11 +52,16 @@ class AuthorizationAlgebraTest(unittest.TestCase):
                         that = dot([(vL[i] - z*chi[i]) % q for i in range(N)],
                                    [(powers[i]*(vR[i] + z*chi[i]) + z*z*w[i]) % q for i in range(N)])
                         theta = (z*z*threshold + (z-z*z)*dot(chi, powers) - z**3*dot(chi, w)) % q
+                        self.assertEqual(dot(l0, r0), theta)
                         self.assertEqual((A + x*S) % q, (mu*h0 + dot(vL, gens) + dot(vR, hs)) % q)
                         self.assertEqual((Qe + x*Qs) % q, dot(vL, pkpad))
                         self.assertEqual(that, (dot(l0, r0) + x*t1 + x*x*t2) % q)
                         self.assertEqual(that, (theta + x*T1 + x*x*T2 - taux*h0) % q)
+                        self.assertNotEqual((A + 1 + x*S) % q, (mu*h0 + dot(vL, gens) + dot(vR, hs)) % q)
                         self.assertNotEqual((Qe + 1 + x*Qs) % q, dot(vL, pkpad))
+                        self.assertNotEqual((that + 1) % q, (dot(l0, r0) + x*t1 + x*x*t2) % q)
+                        self.assertNotEqual(that, (theta + z*z + x*T1 + x*x*T2 - taux*h0) % q)
+                        self.assertNotEqual(that, (theta + x*(T1 + 1) + x*x*T2 - taux*h0) % q)
 
 
 if __name__ == "__main__":
