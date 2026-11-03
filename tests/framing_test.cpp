@@ -12,6 +12,14 @@ int main() {
         Bytes({3, 0, 0, 0, 8, 1, 2, 3, 4, 5, 6, 7, 8})) return EXIT_FAILURE;
     if (hta::frame_integer(0) != Bytes({3, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0}))
         return EXIT_FAILURE;
+    auto indices = hta::frame_integer(1);
+    const auto second = hta::frame_integer(2);
+    indices.insert(indices.end(), second.begin(), second.end());
+    const Bytes expected_subset{1,0,0,0,63,2,0,0,0,16,'H','T','A','-','s','e','c','p',
+        '2','5','6','k','1','-','v','1',2,0,0,0,6,'S','U','B','S','E','T',6,0,0,0,26,
+        3,0,0,0,8,0,0,0,0,0,0,0,1,3,0,0,0,8,0,0,0,0,0,0,0,2};
+    if (hta::transcript("SUBSET", {hta::frame(6, indices)}) != expected_subset)
+        return EXIT_FAILURE;
     if (hta::frame(1, Bytes(256, 0))[3] != 1) return EXIT_FAILURE;
     for (auto tag : {0, 7, 255}) {
         try { hta::frame(static_cast<std::uint8_t>(tag), {}); return EXIT_FAILURE; }

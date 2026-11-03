@@ -26,6 +26,22 @@ std::vector<std::uint8_t> frame_integer(std::uint64_t value) {
     return frame(3, payload);
 }
 
+std::vector<std::uint8_t> transcript(const std::string& label,
+                                    const std::vector<std::vector<std::uint8_t>>& fields) {
+    const std::string suite = "HTA-secp256k1-v1";
+    auto payload = frame(2, {suite.begin(), suite.end()});
+    const auto framed_label = frame(2, {label.begin(), label.end()});
+    if (framed_label.size() > std::numeric_limits<std::uint32_t>::max() - payload.size())
+        throw std::length_error("transcript too large");
+    payload.insert(payload.end(), framed_label.begin(), framed_label.end());
+    for (const auto& field : fields) {
+        if (field.size() > std::numeric_limits<std::uint32_t>::max() - payload.size())
+            throw std::length_error("transcript too large");
+        payload.insert(payload.end(), field.begin(), field.end());
+    }
+    return frame(1, payload);
+}
+
 std::optional<FrameView> read_frame(const std::vector<std::uint8_t>& input, std::size_t offset,
                                     std::uint8_t expected_tag, std::size_t max_payload) noexcept {
     if (expected_tag < 1 || expected_tag > 6 || offset > input.size() ||

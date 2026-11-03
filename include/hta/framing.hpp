@@ -3,12 +3,16 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace hta {
 // Draft suite framing only; callers validate payloads and enforce resource limits.
 std::vector<std::uint8_t> frame(std::uint8_t tag, const std::vector<std::uint8_t>& payload);
 std::vector<std::uint8_t> frame_integer(std::uint64_t value);
+// Fields must already be correctly framed and validated by the caller.
+std::vector<std::uint8_t> transcript(const std::string& label,
+                                    const std::vector<std::vector<std::uint8_t>>& fields);
 
 struct FrameView { std::size_t payload_offset; std::size_t payload_size; std::size_t next_offset; };
 // Returns a view into input; caller validates the payload and any remaining bytes.
