@@ -22,3 +22,7 @@ python3 -m unittest discover -s tests -v
 ```
 
 These checks cover framing, parameters, and toy-group algebra. They do not implement or verify a complete cryptographic protocol.
+
+Phase 1 adds CMake presets (`debug`, `release`, `asan-ubsan`, `tsan`, `coverage`, `fuzz`, and `bench`). Presets require CMake 3.21 or newer; `fuzz` requires Clang. For example, run `cmake --preset debug`, `cmake --build --preset debug`, and `ctest --preset debug`. The `fuzz` preset enables instrumentation only; it does not yet contain a fuzz target. The `bench` preset does not produce benchmark results.
+
+`docker build -t hta-scaffold .` builds and tests the scaffold in an Ubuntu container. The base image is pinned by digest and the toolchain uses the Ubuntu archive snapshot dated 2026-10-01. The certificate bootstrap uses a version-pinned package and its dependencies from the live archive. Repeatability depends on archive availability and has not yet been verified by independent clean builds.

@@ -1,0 +1,9 @@
+.git
+build
+__pycache__
+*.pyc
+AGENTS.md
+plan.md
+decision.md
+flow.md
+Threshold_Schnorr_Integrated_Proof_Audit_v5.pdf
