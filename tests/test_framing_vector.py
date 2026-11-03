@@ -6,6 +6,28 @@ import unittest
 
 
 class FramingVectorTest(unittest.TestCase):
+    def test_draft_authorization_challenge_transcripts(self):
+        frame = lambda tag, payload: bytes([tag]) + struct.pack(">I", len(payload)) + payload
+        blob = lambda value: frame(2, value)
+        uint = lambda value: frame(3, value.to_bytes(8, "big"))
+        point = lambda value: frame(4, value)
+        scalar = lambda value: frame(5, value)
+        transcript = lambda label, *values: frame(
+            1, blob(b"HTA-secp256k1-v1") + blob(label) + b"".join(values)
+        )
+        G = bytes.fromhex("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798")
+        cpk = bytes.fromhex("5e2d5167321e94eac08ec2e24b981f2e45d741b7a8cf35df029b06ed6a9a7fe8")
+        statement = transcript(b"ST", blob(cpk), uint(1), uint(1), blob(b"abc"), point(G))
+        identity = point(b"\x00")
+        prefix = transcript(b"T0", blob(statement), identity, identity, identity)
+        challenge = lambda value: hashlib.sha256(transcript(b"SCALAR", blob(value), uint(0))).digest()
+        y = challenge(transcript(b"Y", blob(prefix)))
+        z = challenge(transcript(b"Z", blob(prefix), scalar(y)))
+        x = challenge(transcript(b"X", blob(prefix), scalar(y), scalar(z), identity, identity))
+        self.assertEqual(y.hex(), "043299348632429ab1a0dac675ef261d1f13b0b22a1bc769d5f748126894b0be")
+        self.assertEqual(z.hex(), "9f46de52da1bfbea5d265a042ea111add7452c96179171a71d1b6efdf79c1b5f")
+        self.assertEqual(x.hex(), "7daead5cad16a3c94933c79d2e1c2b40557989cdd256cce065ffe026871d075d")
+
     def test_draft_roster_and_signing_transcripts(self):
         frame = lambda tag, payload: bytes([tag]) + struct.pack(">I", len(payload)) + payload
         blob = lambda value: frame(2, value)
