@@ -1,6 +1,14 @@
 # Draft concrete suite: secp256k1
 
-This is a design proposal, not a frozen wire format or a security claim. The accompanying audit v5 PDF is authoritative. Independent review, complete encodings, and known-answer vectors are required before the specification gate in `plan.md` is met.
+The user selected the choices below as a frozen research implementation target on 2026-11-03. This is a versioned working baseline, not a claim of interoperability, security, or completed Phase 0 review. The accompanying audit v5 PDF is authoritative. Independent review and independent known-answer vectors remain outstanding; findings may require a new suite version.
+
+## Recommended first suite
+
+Continue with `HTA-secp256k1-v1` and the encodings below as the single Phase 0 candidate. The prime-order secp256k1 group fits the audit's group interface; SEC 1 compressed points and 32-byte scalars give canonical representations; SHA-256 and typed, length-prefixed transcripts separate protocol uses and preserve field boundaries. RFC 9380 specifies the selected hash-to-curve suite. These are concrete interoperability choices, not a claim that they are uniquely optimal or that the resulting protocol is secure.
+
+Use the exact proposed transcript and transport layouts below for further specification and vector work; do not silently substitute BIP340 encodings, hashes, or challenge rules. Identity encoding, external generator-context authentication, one-use nonces, and strict decoding are needed by this candidate's protocol and threat model. Partial-share verification is an optional extension and is not required to verify a final signature. The limits below are candidate resource policies rather than requirements of the paper.
+
+The user approved this baseline for research implementation. That decision does not represent agreement by the other authors or complete the independent vectors and expert review required by the Phase 0 gate.
 
 ## Parameters and public data
 
