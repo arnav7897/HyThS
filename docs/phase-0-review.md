@@ -7,7 +7,7 @@ This is a working review packet, not an independent review or an approval to fre
 | S1–S3 | Typed framing, scalar rejection sampling and RFC 9380 generator proposal are specified. | Independently verify byte encodings, tags, generator retry, exact vectors, and backend support. |
 | S4 | Use N from audit equation (1), with cache keyed by suite, context and N. | Check cache isolation and roster-change behavior. |
 | S5–S6 | PoP context and ordered roster are proposed; individual PoP checks. | Authors must review registration context and the limits of heuristic PoP; do not assert ideal extraction. |
-| S7–S9 | Partial-share verification is an optional extension; abort and subset encoding are proposed. | Review extension, error handling, and complete message serialization. |
+| S7–S9 | Partial-share verification is an optional extension; abort, subset, and signing message encodings are proposed. | Review extension, transport authentication assumptions, error handling, message limits, and interoperability vectors. |
 | S10 | Durable sid reservation and fail-closed crash behavior are proposed. | Review storage rollback, concurrency, lifecycle, and actual implementation evidence. |
 | S11–S13 | n ≤ 65535, thresholds, dimensions, verifier inputs, and edge cases are specified. | Confirm resource limits and exercise complete protocol edge cases. |
 | S14 | Secret-bearing variable-time operations are explicitly labeled. | Select and examine backend operations; do not claim constant-time behavior without evidence. |

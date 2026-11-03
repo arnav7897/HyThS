@@ -40,6 +40,22 @@ Uppercase transcript names in the table represent the full encoded bytes from th
 
 For POP, NON, SIG, Y, Z, and X, calculate SHA-256 over `T("SCALAR", B(transcript), U(counter))`, with counter initially zero. Interpret the 32-byte digest as an integer; accept if less than q, additionally requiring nonzero for Y, Z and X. Otherwise increment counter and retry; fail on 64-bit overflow. Under a random-oracle idealization this is uniform in the respective range. Secrets use an independently supplied cryptographic random source and unbiased sampling, not this public hash procedure.
 
+## Registration and signing message proposal
+
+The following are draft transport encodings, distinct from the transcript inputs above. The application supplies an authenticated roster, registry identifier, suite, and generator context to the parties; these encodings do not provide transport authentication or establish participant authorization. Every received message is one complete T value: reject unexpected labels, extra fields, trailing bytes, noncanonical encodings and oversized inputs before allocating or operating on points.
+
+| Message | Encoding |
+| --- | --- |
+| Registration for index i | `T("REGISTER", U(i), P(PK_i), P(B_i), Q(z_i))` |
+| Round 1 request to signer i | `T("ROUND1-REQUEST", U(i), B(sid), B(CPK), U(t), B(m), P(Qe), B(SUBSET))` |
+| Round 1 response | `T("ROUND1-RESPONSE", U(i), B(sid), P(U_i1), P(U_i2))` |
+| Round 2 request to signer i | `T("ROUND2-REQUEST", U(i), B(sid), P(R1), P(R2))` |
+| Round 2 response | `T("ROUND2-RESPONSE", U(i), B(sid), Q(s_i))` |
+
+The registry checks the assigned index, distinct nonidentity PK, canonical group membership, and the PoP equation (4) with the published registry context before accepting the ordered roster. No extraction from this PoP is claimed. Round 1 validates the received CPK against the locally authenticated roster, verifies the recipient index and subset, and constructs CTX from the received sid, CPK, t, m, Qe, and SUBSET. Each signer binds the resulting context to sid. Round 2 uses the stored context; it does not accept a replacement context from the coordinator. Responses must match the expected participant and session. The coordinator validates canonical nonidentity nonce commitments before aggregation; signers reject invalid or identity R1, R2, and R as in Algorithm 1.
+
+The message m is at most 16 MiB, sid is 1–256 bytes, and SUBSET contains at most n strictly increasing valid indices. Limit a complete round-1 request to 17 MiB, and each other transport message to 4096 bytes. Implementations must validate each nested length and field count before use. These limits are suite choices and need interoperability review. A request arriving after an abort or reply must not reactivate a session.
+
 ## Proof and signature encoding proposal
 
 Given n and therefore N from the authenticated verification context, encode audit Algorithm 2's output and equation (20) as:
