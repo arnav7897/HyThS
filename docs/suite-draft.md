@@ -65,6 +65,15 @@ Round 2 must atomically claim the live session before checking its immutable con
 
 On process restart all sessions formerly live are aborted and their IDs remain spent; never reconstruct or resume their nonce state. Memory wiping is best effort in ordinary software and requires backend and compiler review; this design does not promise physical erasure. If durable reservation, concurrency control, or rollback resistance is unavailable, fail closed rather than claiming crash-safe signing. These operational rules instantiate Algorithm 1's permanent sid and one-use requirements; they do not add a same-session agreement guarantee.
 
+## Operational choices for review
+
+- Cache generators only by the complete tuple `(suite, sigma_gen, N)`. Use audit equation (1) exactly; do not bucket roster sizes or reuse a different N's tuple.
+- The application supplies authenticated roster, threshold, suite, and generator context to every verifier. A valid signature alone does not establish that the caller selected an appropriate roster or threshold.
+- On invalid roster, subset, canonical encoding, input length, group point, or signer state, return an error and no signature share. The coordinator resamples xi when Qe is identity and aborts the session when R1, R2, or R is identity, as specified in audit §4.1–4.2. Retry a failed session only with a fresh sid and fresh nonces.
+- Optional partial-share verification is an implementation extension: check `s_i G = U_i1 + beta U_i2 + c PK_i` using the recorded commitments and the session's challenges. The audit does not specify this as a separate protocol algorithm, and accepting individual shares does not replace final verification.
+- Use individual PoP checks for the reference; no batch-verification rule is specified. Check all edge cases including n = 1, t = 1, t = n and signer count exactly t.
+- Signer secret keys and nonces and prover witness and blinders are secret. A variable-time operation on these values can leak information. Any research-only variable-time implementation and results must be labeled, and no constant-time claim is made without independent evidence.
+
 ## Remaining specification gates
 
 1. Independently review the transcript proposal against the PDF and generate deterministic vectors for every encoding and oracle, including rejection cases.
