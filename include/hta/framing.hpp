@@ -10,6 +10,8 @@ namespace hta {
 // Draft suite framing only; callers validate payloads and enforce resource limits.
 std::vector<std::uint8_t> frame(std::uint8_t tag, const std::vector<std::uint8_t>& payload);
 std::vector<std::uint8_t> frame_integer(std::uint64_t value);
+// For public encoded inputs; not constant-time for secret scalars.
+bool is_canonical_scalar(const std::vector<std::uint8_t>& encoded) noexcept;
 // Fields must already be correctly framed and validated by the caller.
 std::vector<std::uint8_t> transcript(const std::string& label,
                                     const std::vector<std::vector<std::uint8_t>>& fields);

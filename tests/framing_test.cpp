@@ -12,6 +12,15 @@ int main() {
         Bytes({3, 0, 0, 0, 8, 1, 2, 3, 4, 5, 6, 7, 8})) return EXIT_FAILURE;
     if (hta::frame_integer(0) != Bytes({3, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0}))
         return EXIT_FAILURE;
+    Bytes order{0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xfe,
+                0xba,0xae,0xdc,0xe6,0xaf,0x48,0xa0,0x3b,0xbf,0xd2,0x5e,0x8c,0xd0,0x36,0x41,0x41};
+    if (hta::is_canonical_scalar(order) || !hta::is_canonical_scalar(Bytes(32, 0)) ||
+        hta::is_canonical_scalar(Bytes(31, 0)) || hta::is_canonical_scalar(Bytes(33, 0)))
+        return EXIT_FAILURE;
+    --order.back();
+    if (!hta::is_canonical_scalar(order)) return EXIT_FAILURE;
+    order.back() += 2;
+    if (hta::is_canonical_scalar(order)) return EXIT_FAILURE;
     auto indices = hta::frame_integer(1);
     const auto second = hta::frame_integer(2);
     indices.insert(indices.end(), second.begin(), second.end());

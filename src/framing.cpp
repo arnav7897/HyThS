@@ -1,5 +1,7 @@
 #include "hta/framing.hpp"
 
+#include <algorithm>
+#include <array>
 #include <limits>
 #include <stdexcept>
 
@@ -24,6 +26,14 @@ std::vector<std::uint8_t> frame_integer(std::uint64_t value) {
         value >>= 8;
     }
     return frame(3, payload);
+}
+
+bool is_canonical_scalar(const std::vector<std::uint8_t>& encoded) noexcept {
+    constexpr std::array<std::uint8_t, 32> order{
+        0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xfe,
+        0xba,0xae,0xdc,0xe6,0xaf,0x48,0xa0,0x3b,0xbf,0xd2,0x5e,0x8c,0xd0,0x36,0x41,0x41};
+    return encoded.size() == order.size() &&
+           std::lexicographical_compare(encoded.begin(), encoded.end(), order.begin(), order.end());
 }
 
 std::vector<std::uint8_t> transcript(const std::string& label,
