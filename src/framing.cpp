@@ -17,6 +17,15 @@ std::vector<std::uint8_t> frame(std::uint8_t tag, const std::vector<std::uint8_t
     return result;
 }
 
+std::vector<std::uint8_t> frame_integer(std::uint64_t value) {
+    std::vector<std::uint8_t> payload(8);
+    for (std::size_t i = 8; i > 0; --i) {
+        payload[i - 1] = static_cast<std::uint8_t>(value);
+        value >>= 8;
+    }
+    return frame(3, payload);
+}
+
 std::optional<FrameView> read_frame(const std::vector<std::uint8_t>& input, std::size_t offset,
                                     std::uint8_t expected_tag, std::size_t max_payload) noexcept {
     if (expected_tag < 1 || expected_tag > 6 || offset > input.size() ||
