@@ -6,7 +6,8 @@ Phase 2 is in progress through feature branches. The audit v5 PDF and `suite-dra
 
 - [x] RFC 9380 SHA-256 `expand_message_xmd`: published short- and long-DST vectors, multi-block output, and length boundaries. Pushed in `2e38ba4`.
 - [ ] Suite scalar-challenge hashing: implementation and one example are in `2da0ee2`; force and check rejection, nonzero, and counter-exhaustion paths before completion.
-- [ ] Review and pin the cryptographic backend and dependencies by immutable revision and integrity hash. Record license, build flags, platform support, global state, timing limitations, and the OpenSSL dependency. mcl revision `9f49ba06593e2d426ab6fb9b0e17bc125a6f720c` was inspected and built locally; it is not yet selected or pinned.
+- [ ] Review and pin all cryptographic dependencies. The research mcl revision and source hash are pinned; OpenSSL is selected by version range, and backend platform and timing evidence remain incomplete.
+- [ ] Research public-input secp256k1 adapter: mcl revision and source hash are pinned in CMake. Known G and 2G, identity, malformed inputs, scalar boundaries, and public MSM are tested. Cross-platform and broader independent checks remain; secret inputs and concurrent mixed mcl curves are unsupported.
 
 ## Build in dependency order
 

@@ -31,7 +31,10 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libssl-dev
+        run: |
+          sudo apt-get update && sudo apt-get install -y libssl-dev clang
+          echo "CC=clang" >> "$GITHUB_ENV"
+          echo "CXX=clang++" >> "$GITHUB_ENV"
       - if: runner.os == 'macOS'
         run: echo "OPENSSL_ROOT_DIR=$(brew --prefix openssl@3)" >> "$GITHUB_ENV"
       - run: cmake --preset debug
@@ -76,6 +79,6 @@ jobs:
           for build in first second; do
             docker build --no-cache --provenance=false -t "hta-check:$build" .
             docker run --rm "hta-check:$build" sh -c \
-              "dpkg-query -W -f='\${binary:Package}=\${Version}\n' | LC_ALL=C sort; sha256sum /src/build/debug/scaffold_smoke /src/build/debug/framing_test /src/build/debug/parameters_test /src/build/debug/expand_message_test /src/build/debug/scalar_challenge_test" > "/tmp/hta-$build.txt"
+              "dpkg-query -W -f='\${binary:Package}=\${Version}\n' | LC_ALL=C sort; sha256sum /src/build/debug/scaffold_smoke /src/build/debug/framing_test /src/build/debug/parameters_test /src/build/debug/expand_message_test /src/build/debug/scalar_challenge_test /src/build/debug/secp256k1_public_test" > "/tmp/hta-$build.txt"
           done
           diff -u /tmp/hta-first.txt /tmp/hta-second.txt

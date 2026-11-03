@@ -4,7 +4,7 @@ Status: specification work; no protocol implementation or independently validate
 
 | Audit reference | Required behavior | Implementation and test status |
 | --- | --- | --- |
-| §2.1, (1)–(2) | Prime-order group; canonical typed encodings; dimensions and parameter bounds. Intermediate proof commitments may be identity. | Draft suite dimensions tested exhaustively for allowed n; framing and scalar checks exist. Group validation, independent vectors and full parser tests pending. |
+| §2.1, (1)–(2) | Prime-order group; canonical typed encodings; dimensions and parameter bounds. Intermediate proof commitments may be identity. | A research public-input secp256k1 adapter validates and converts canonical scalar and point encodings, including permitted identity. Known-point and malformed-input tests exist; secret-scalar timing, full parser and independent suite vectors remain pending. |
 | Definition 2.1, (3) | Derive exactly 2N+1 nonidentity generators in the specified order from suite, context, N, and index. | RFC 9380 SHA-256 expand_message_xmd is implemented and checked against published expander vectors; hash-to-field, curve mapping, generator derivation and independent suite vectors remain pending. |
 | Assumption 3.1, (4) | Ordered distinct nonidentity roster; ideal extractable registration in proofs. PoP is a heuristic practical proposal. | Registration design and tests pending. |
 | (5)–(7) | Bind ordered roster, threshold, message, subset and masked key into the specified contexts. Resample identity masked keys. | Suite scalar-challenge rejection sampling has an example test; full context construction, rejection-path testing and protocol checks remain pending. |

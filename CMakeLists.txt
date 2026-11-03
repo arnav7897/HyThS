@@ -3,6 +3,19 @@ project(hta_schnorr LANGUAGES CXX)
 
 find_package(OpenSSL 3 REQUIRED COMPONENTS Crypto)
 
+include(FetchContent)
+if(POLICY CMP0135)
+  cmake_policy(SET CMP0135 NEW)
+endif()
+set(MCL_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(MCL_BUILD_SAMPLE OFF CACHE BOOL "" FORCE)
+set(MCL_USE_GMP OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(mcl
+  URL https://codeload.github.com/herumi/mcl/tar.gz/9f49ba06593e2d426ab6fb9b0e17bc125a6f720c
+  URL_HASH SHA256=0a910a6c22935a73f537d3b1d95f08554ece7ccd5b2c04ff2e8ad4b19ca06de1)
+FetchContent_MakeAvailable(mcl)
+set_target_properties(mcl PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
 set(HTA_INSTRUMENTATION "none" CACHE STRING "Build instrumentation: none, asan-ubsan, tsan, coverage, fuzz")
 set_property(CACHE HTA_INSTRUMENTATION PROPERTY STRINGS none asan-ubsan tsan coverage fuzz)
 if(HTA_INSTRUMENTATION STREQUAL "asan-ubsan")
@@ -57,3 +70,11 @@ target_link_libraries(hta_scalar_challenge PRIVATE hta_framing OpenSSL::Crypto)
 add_executable(scalar_challenge_test tests/scalar_challenge_test.cpp)
 target_link_libraries(scalar_challenge_test PRIVATE hta_scalar_challenge hta_framing)
 add_test(NAME scalar_challenge COMMAND scalar_challenge_test)
+
+add_library(hta_secp256k1_public src/secp256k1_public.cpp)
+target_include_directories(hta_secp256k1_public PUBLIC include)
+target_compile_features(hta_secp256k1_public PUBLIC cxx_std_17)
+target_link_libraries(hta_secp256k1_public PRIVATE hta_framing mcl::mcl_st)
+add_executable(secp256k1_public_test tests/secp256k1_public_test.cpp)
+target_link_libraries(secp256k1_public_test PRIVATE hta_secp256k1_public)
+add_test(NAME secp256k1_public COMMAND secp256k1_public_test)

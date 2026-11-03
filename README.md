@@ -12,7 +12,7 @@ Repository code is licensed under [Apache-2.0](LICENSE). The included audit PDF 
 
 For the Phase 0 review, start with the [suite draft](docs/suite-draft.md), [audit traceability](docs/traceability.md), and [review questions](docs/phase-0-review.md). The examples are self-generated and need independent validation.
 
-The existing checks require CMake, a C++17 compiler, OpenSSL 3 development headers, and Python 3:
+The existing checks require CMake, a C++17 compiler, OpenSSL 3 development headers, Python 3, and network access to download the hash-pinned mcl source on the first build:
 
 ```sh
 cmake -S . -B build
@@ -22,6 +22,8 @@ python3 -m unittest discover -s tests -v
 ```
 
 These checks cover framing, parameters, and toy-group algebra. They do not implement or verify a complete cryptographic protocol.
+
+The experimental secp256k1 adapter handles public inputs only. It does not support signing keys or nonces, and it must not share a process with code that reinitializes mcl for another curve. No constant-time claim is made.
 
 Phase 1 adds CMake presets (`debug`, `release`, `asan-ubsan`, `tsan`, `coverage`, `fuzz`, and `bench`). Presets require CMake 3.21 or newer; `fuzz` requires Clang. For example, run `cmake --preset debug`, `cmake --build --preset debug`, and `ctest --preset debug`. The `fuzz` preset enables instrumentation only; it does not yet contain a fuzz target. The `bench` preset does not produce benchmark results.
 
