@@ -15,7 +15,7 @@ jobs:
         preset: [debug, release, asan-ubsan, tsan, coverage, fuzz, bench]
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - run: cmake --preset "${{ matrix.preset }}"
       - run: cmake --build --preset "${{ matrix.preset }}"
       - run: ctest --preset "${{ matrix.preset }}"
@@ -28,7 +28,49 @@ jobs:
         os: [ubuntu-24.04-arm, macos-14]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - run: cmake --preset debug
       - run: cmake --build --preset debug
       - run: ctest --preset debug
+
+  compilers:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { package: g++-12, cxx: g++-12 }
+          - { package: g++-13, cxx: g++-13 }
+          - { package: clang-16, cxx: clang++-16 }
+          - { package: clang-17, cxx: clang++-17 }
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - run: sudo apt-get update && sudo apt-get install -y "${{ matrix.package }}"
+      - run: cmake --preset debug -DCMAKE_CXX_COMPILER="${{ matrix.cxx }}"
+      - run: cmake --build --preset debug
+      - run: ctest --preset debug
+
+  static-analysis:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - run: sudo apt-get update && sudo apt-get install -y clang-format-18 clang-tidy-18 cppcheck
+      - run: clang-format-18 --dry-run --Werror src/*.cpp include/hta/*.hpp tests/*.cpp
+      - run: cmake --preset debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+      - run: clang-tidy-18 -p build/debug src/*.cpp --warnings-as-errors='*'
+      - run: cppcheck --enable=warning,performance,portability --error-exitcode=1 --std=c++17 -I include src tests/*.cpp
+
+  container-repeatability:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Compare two clean builds
+        shell: bash
+        run: |
+          set -eu
+          for build in first second; do
+            docker build --no-cache --provenance=false -t "hta-check:$build" .
+            docker run --rm "hta-check:$build" sh -c \
+              "dpkg-query -W -f='\${binary:Package}=\${Version}\n' | LC_ALL=C sort; sha256sum /src/build/debug/scaffold_smoke /src/build/debug/framing_test /src/build/debug/parameters_test" > "/tmp/hta-$build.txt"
+          done
+          diff -u /tmp/hta-first.txt /tmp/hta-second.txt

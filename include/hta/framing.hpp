@@ -8,16 +8,20 @@
 
 namespace hta {
 // Draft suite framing only; callers validate payloads and enforce resource limits.
-std::vector<std::uint8_t> frame(std::uint8_t tag, const std::vector<std::uint8_t>& payload);
+std::vector<std::uint8_t> frame(std::uint8_t tag, const std::vector<std::uint8_t> &payload);
 std::vector<std::uint8_t> frame_integer(std::uint64_t value);
 // For public encoded inputs; not constant-time for secret scalars.
-bool is_canonical_scalar(const std::vector<std::uint8_t>& encoded) noexcept;
+bool is_canonical_scalar(const std::vector<std::uint8_t> &encoded) noexcept;
 // Fields must already be correctly framed and validated by the caller.
-std::vector<std::uint8_t> transcript(const std::string& label,
-                                    const std::vector<std::vector<std::uint8_t>>& fields);
+std::vector<std::uint8_t> transcript(const std::string &label,
+                                     const std::vector<std::vector<std::uint8_t>> &fields);
 
-struct FrameView { std::size_t payload_offset; std::size_t payload_size; std::size_t next_offset; };
+struct FrameView {
+    std::size_t payload_offset;
+    std::size_t payload_size;
+    std::size_t next_offset;
+};
 // Returns a view into input; caller validates the payload and any remaining bytes.
-std::optional<FrameView> read_frame(const std::vector<std::uint8_t>& input, std::size_t offset,
+std::optional<FrameView> read_frame(const std::vector<std::uint8_t> &input, std::size_t offset,
                                     std::uint8_t expected_tag, std::size_t max_payload) noexcept;
-}
+} // namespace hta
