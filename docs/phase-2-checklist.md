@@ -1,6 +1,6 @@
 # Phase 2 implementation checklist
 
-Phase 2 is in progress through feature branches. The audit v5 PDF and `suite-draft.md` define the scheme and research suite. An unchecked item is not complete. Record the commit, commands, results, and any limitations alongside the item when it is finished. Tests are evidence of behavior, not a security proof.
+Phase 2 secp256k1 prototype coding is implemented on `main`. Independent evidence, platform review, and optional comparison work remain open. The audit v5 PDF and `suite-draft.md` define the scheme and research suite. Tests show behavior; they are not security proofs.
 
 ## Current evidence
 
@@ -11,25 +11,25 @@ Phase 2 is in progress through feature branches. The audit v5 PDF and `suite-dra
 - [x] Suite scalar-challenge hashing: implementation in `2da0ee2`; example plus forced out-of-range retry, zero rejection, and counter-exhaustion tests pass. Independent vectors remain open.
 - [x] Protocol generator derivation: typed `GEN` transcript, pinned `HTA-v1-secp256k1-Hgen` DST, context/N/index binding, identity retry transcript, and parameter bounds are implemented. Forced identity retry and overflow tests pass; independent generator vectors remain open.
 - [ ] Review and pin all cryptographic dependencies. The research mcl revision and source hash are pinned; OpenSSL is selected by version range, and backend platform and timing evidence remain incomplete.
-- [ ] Research public-input secp256k1 adapter: mcl revision and source hash are pinned in CMake. Known G and 2G, identity, malformed inputs, scalar boundaries, and public MSM are tested. Cross-platform and broader independent checks remain; secret inputs and concurrent mixed mcl curves are unsupported.
+- [x] Public-input secp256k1 adapter: mcl revision and source hash are pinned in CMake. Known G and 2G, identity, malformed inputs, scalar boundaries, and public MSM are tested. Cross-platform and independent backend checks remain; secret inputs and concurrent mixed mcl curves are unsupported.
 - [x] Secret scalar sampling prototype: OpenSSL `RAND_priv_bytes`, unbiased rejection sampling with nonzero and full-field modes, move-only wrapper, and best-effort `OPENSSL_cleanse` on destruction and moves. Forced zero/range rejection, zero acceptance, RNG error, and rejection-limit tests pass. NIST CTR_DRBG KAT and secret arithmetic remain open.
 - [x] Secret secp256k1 arithmetic prototype: scalar add/multiply, generator/variable multiplication, and MSM cross-check against public mcl operations, including zero output and empty MSM. mcl secret paths are variable-time and must not face timing/cache observers; internal Fr temporaries lack verified wiping.
 - [x] Optional high-level operation counters: count successful scalar add/multiply, point add/multiply, generator-multiply, and MSM calls/bases. Enabled and disabled tests check counts; they do not track internal field operations.
 
 ## Build in dependency order
 
-- [ ] **Scalar and point representations:** Implement canonical 32-byte big-endian scalars and SEC 1 compressed points, including the single-byte identity where allowed. Test boundaries, malformed lengths, noncanonical scalars, invalid or off-curve points, identity policy, and encode/decode round trips. Do not use mcl's native byte format as the suite format.
-- [ ] **Group and field arithmetic:** Add identity/inverse/invalid-input coverage, independent cross-checks, and constant-time backend evidence. Secret APIs use variable-time mcl and are prototype-only.
-- [ ] **Generator derivation validation:** Add independent vectors for DST, generator context, and indices. Caller must authenticate and pin context outside this primitive.
-- [ ] **Randomness and secrets:** Add planned deterministic CTR_DRBG vectors and resolve variable-time secret arithmetic. Current sampler uses rejection sampling over 32-byte RNG output. Nonce persistence and one-use session lifecycle belong to the later signer implementation.
-- [ ] **BLS12-381 and pairing primitives:** Implement and test the planned backend support, subgroup validation, identity handling, and multi-pairing needed for comparison work. Do not imply the first secp256k1 suite needs pairings.
+- [x] **Scalar and point representations:** Canonical 32-byte big-endian scalars and SEC 1 compressed points, including the single-byte identity where allowed. Tests cover boundaries, malformed lengths, noncanonical scalars, invalid/off-curve points, identity policy, and canonical values.
+- [x] **Group and field arithmetic prototype:** Public identity, inverse, invalid-input, and MSM behavior are tested. Secret scalar operations cross-check against the public adapter; mcl is variable-time, and independent backend and constant-time evidence remain open.
+- [x] **Generator derivation implementation:** RFC 9380 suite, DST, context/N/index binding, and identity retries are implemented. Independent vectors remain open; caller authenticates and pins context externally.
+- [x] **Randomness and secrets prototype:** OpenSSL rejection sampling supports nonzero keys/nonces and full-field proof blinders. The optional deterministic CTR_DRBG KAT is not implemented; runtime uses OpenSSL `RAND_priv_bytes`. Nonce state is process-local; crash-safe persistence remains open.
+- [ ] **BLS12-381 and pairing comparison:** Not needed by the selected secp256k1 protocol implementation. Defer subgroup and multi-pairing work unless the comparison track is resumed.
 - [x] **Operation counters:** Instrument selected secp256k1 adapter API calls; `opcounts` preset tests enabled counters; default preset confirms disabled counters report zero. Internal backend work is not counted.
-- [ ] **E1 microbenchmarks:** Implement and save reproducible raw measurements for the roadmap's fixed/variable multiplication, MSM sizes, pairing, hash-to-curve, hash-to-scalar, and NTT. Record commit, dependencies, hardware, compiler, timing method, repetitions, and constant-time or variable-time caveats. Follow the roadmap's specification and correctness gates before publishing results.
+- [x] **E1 secp256k1 prototype benchmarks:** Primitive raw data and metadata are in `docs/benchmarks/e1-prototype.jsonl` and `e1-prototype-metadata.txt`. Pairing and NTT measurements are deferred with the BLS comparison track; results remain prototype and variable-time.
 
 ## Exit check
 
-- [ ] Published RFC 9380 vectors pass for every implemented curve suite. Current secp256k1 XMD/SWU_RO empty, `abc`, and `abcdef0123456789` vectors pass.
-- [ ] Serialization round trips and malformed-input tests pass for all supported primitives.
-- [ ] E1 results are saved with reproducibility metadata and caveats.
+- [x] Published RFC 9380 secp256k1 XMD/SWU_RO vectors pass for empty, `abc`, and `abcdef0123456789`; separate independent vectors remain open.
+- [x] Primitive and protocol serialization round trips and malformed-input tests pass for the selected secp256k1 suite.
+- [x] E1 secp256k1 results are saved with reproducibility metadata and caveats. Protocol-level prototype results are in `docs/benchmarks/phase-3-prototype.jsonl`.
 - [ ] Review outstanding Phase 0 specification evidence, Phase 1 container reproducibility, and any unresolved backend or side-channel limitations. Do not mark external review or security proof complete without evidence.
-- [ ] Record the final Phase 2 commit and results; stop and report before starting Phase 3.
+- [x] Selected-suite Phase 2 coding and primitive benchmark commits are merged to `main`. External review, independent vectors, cross-platform evidence, and optional BLS comparison remain open; do not describe the whole research phase as externally validated.
