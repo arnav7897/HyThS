@@ -1,0 +1,8 @@
+{"name":"secp256k1_generator_mul","iterations_per_sample":300,"samples_total_ns":[6239891,9454246,6080230,6164974,6078640,5736376,7649584,5770589,6173289],"median_ns_per_op":20549,"output_bytes":33}
+{"name":"secp256k1_variable_mul","iterations_per_sample":300,"samples_total_ns":[6158842,5881781,7614285,11532663,10819388,7205690,6215083,5805300,10280997],"median_ns_per_op":24018,"output_bytes":33}
+{"name":"secp256k1_hash_to_scalar","iterations_per_sample":300,"samples_total_ns":[646415,656430,654840,679523,680422,731905,725941,753406,746562],"median_ns_per_op":2268,"output_bytes":32}
+{"name":"secp256k1_hash_to_curve","iterations_per_sample":300,"samples_total_ns":[172653410,225495021,195388268,213340048,214642800,232276320,191412845,165587348,176227293],"median_ns_per_op":651294,"output_bytes":33}
+{"name":"secp256k1_msm_1","iterations_per_sample":300,"samples_total_ns":[4605555,4151628,4563570,4895706,4534298,4341907,4639450,4862503,4416689],"median_ns_per_op":15211,"output_bytes":33}
+{"name":"secp256k1_msm_8","iterations_per_sample":300,"samples_total_ns":[57482144,59296130,57889337,59931260,58560335,57314643,60173925,56720775,59133239],"median_ns_per_op":195201,"output_bytes":33}
+{"name":"secp256k1_msm_32","iterations_per_sample":300,"samples_total_ns":[223963183,217068472,219170103,225432294,266745688,341552182,297427501,254944361,222809990],"median_ns_per_op":751440,"output_bytes":33}
+{"name":"secp256k1_msm_128","iterations_per_sample":300,"samples_total_ns":[694183243,777257294,851866551,742806445,693929545,688705788,871321239,755039509,724699392],"median_ns_per_op":2476021,"output_bytes":33}

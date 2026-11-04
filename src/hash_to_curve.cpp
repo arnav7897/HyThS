@@ -18,7 +18,8 @@ using Context = std::unique_ptr<BN_CTX, decltype(&BN_CTX_free)>;
 
 Number number() {
     Number value(BN_new(), BN_free);
-    if (!value) throw std::runtime_error("hash-to-curve allocation failed");
+    if (!value)
+        throw std::runtime_error("hash-to-curve allocation failed");
     return value;
 }
 Number constant(const char *hex) {
@@ -30,7 +31,8 @@ Number constant(const char *hex) {
     return Number(raw, BN_free);
 }
 void ok(int result) {
-    if (result != 1) throw std::runtime_error("hash-to-curve field operation failed");
+    if (result != 1)
+        throw std::runtime_error("hash-to-curve field operation failed");
 }
 void add(BIGNUM *r, const BIGNUM *a, const BIGNUM *b, const BIGNUM *p, BN_CTX *c) {
     ok(BN_mod_add(r, a, b, p, c));
@@ -42,11 +44,12 @@ void mul(BIGNUM *r, const BIGNUM *a, const BIGNUM *b, const BIGNUM *p, BN_CTX *c
     ok(BN_mod_mul(r, a, b, p, c));
 }
 void inv(BIGNUM *r, const BIGNUM *a, const BIGNUM *p, BN_CTX *c) {
-    if (!BN_mod_inverse(r, a, p, c)) throw std::runtime_error("hash-to-curve inverse failed");
+    if (!BN_mod_inverse(r, a, p, c))
+        throw std::runtime_error("hash-to-curve inverse failed");
 }
 
-void polynomial(BIGNUM *out, const BIGNUM *x, const char *const *coefficients,
-                std::size_t count, const BIGNUM *p, BN_CTX *ctx) {
+void polynomial(BIGNUM *out, const BIGNUM *x, const char *const *coefficients, std::size_t count,
+                const BIGNUM *p, BN_CTX *ctx) {
     auto coefficient = constant(coefficients[count - 1]);
     ok(BN_copy(out, coefficient.get()) ? 1 : 0);
     for (std::size_t i = count - 1; i > 0; --i) {
@@ -63,21 +66,26 @@ struct Point {
 };
 
 Point copy_point(const Point &point) {
-    if (point.infinity) return {};
+    if (point.infinity)
+        return {};
     Number x(BN_dup(point.x.get()), BN_free), y(BN_dup(point.y.get()), BN_free);
-    if (!x || !y) throw std::runtime_error("hash-to-curve allocation failed");
+    if (!x || !y)
+        throw std::runtime_error("hash-to-curve allocation failed");
     return {std::move(x), std::move(y), false};
 }
 
-Point add_points(const Point &left, const Point &right, const BIGNUM *curve_a,
-                 const BIGNUM *p, BN_CTX *ctx) {
-    if (left.infinity) return copy_point(right);
-    if (right.infinity) return copy_point(left);
+Point add_points(const Point &left, const Point &right, const BIGNUM *curve_a, const BIGNUM *p,
+                 BN_CTX *ctx) {
+    if (left.infinity)
+        return copy_point(right);
+    if (right.infinity)
+        return copy_point(left);
     auto slope = number(), numerator = number(), denominator = number();
     if (BN_cmp(left.x.get(), right.x.get()) == 0) {
         auto sum_y = number();
         add(sum_y.get(), left.y.get(), right.y.get(), p, ctx);
-        if (BN_is_zero(sum_y.get()) || BN_is_zero(left.y.get())) return {};
+        if (BN_is_zero(sum_y.get()) || BN_is_zero(left.y.get()))
+            return {};
         auto three = constant("3"), two = constant("2");
         mul(numerator.get(), left.x.get(), left.x.get(), p, ctx);
         mul(numerator.get(), numerator.get(), three.get(), p, ctx);
@@ -100,8 +108,7 @@ Point add_points(const Point &left, const Point &right, const BIGNUM *curve_a,
     return {std::move(x), std::move(y), false};
 }
 
-Point map_swu(const BIGNUM *u, const BIGNUM *p, const BIGNUM *a, const BIGNUM *b,
-              BN_CTX *ctx) {
+Point map_swu(const BIGNUM *u, const BIGNUM *p, const BIGNUM *a, const BIGNUM *b, BN_CTX *ctx) {
     // RFC 9380 Sections 6.6.2 and 8.7; Z = -11.
     auto z = constant("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC24");
     auto u2 = number(), u4 = number(), denominator = number(), temporary = number();
@@ -136,8 +143,10 @@ Point map_swu(const BIGNUM *u, const BIGNUM *p, const BIGNUM *a, const BIGNUM *b
     add(gx.get(), gx.get(), b, p, ctx);
     BIGNUM *root = BN_mod_sqrt(nullptr, gx.get(), p, ctx);
     const bool first_square = root != nullptr;
-    if (first_square) y.reset(root);
-    else ERR_clear_error();
+    if (first_square)
+        y.reset(root);
+    else
+        ERR_clear_error();
 
     mul(x2.get(), z.get(), u2.get(), p, ctx);
     mul(x2.get(), x2.get(), x1.get(), p, ctx);
@@ -155,7 +164,8 @@ Point map_swu(const BIGNUM *u, const BIGNUM *p, const BIGNUM *a, const BIGNUM *b
         y.reset(root);
         x1.swap(x2);
     }
-    if (BN_is_odd(u) != BN_is_odd(y.get())) sub(y.get(), p, y.get(), p, ctx);
+    if (BN_is_odd(u) != BN_is_odd(y.get()))
+        sub(y.get(), p, y.get(), p, ctx);
     return {std::move(x1), std::move(y), false};
 }
 
@@ -182,7 +192,8 @@ Point isogeny(const Point &point, const BIGNUM *p, BN_CTX *ctx) {
     polynomial(xd.get(), point.x.get(), x_den, 3, p, ctx);
     polynomial(yn.get(), point.x.get(), y_num, 4, p, ctx);
     polynomial(yd.get(), point.x.get(), y_den, 4, p, ctx);
-    if (BN_is_zero(xd.get()) || BN_is_zero(yd.get())) return {};
+    if (BN_is_zero(xd.get()) || BN_is_zero(yd.get()))
+        return {};
     auto reciprocal = number(), x = number(), y = number();
     inv(reciprocal.get(), xd.get(), p, ctx);
     mul(x.get(), xn.get(), reciprocal.get(), p, ctx);
@@ -195,22 +206,26 @@ Point isogeny(const Point &point, const BIGNUM *p, BN_CTX *ctx) {
 
 std::vector<std::uint8_t> hash_to_curve_secp256k1(const std::vector<std::uint8_t> &message) {
     const std::string dst = "QUUX-V01-CS02-with-secp256k1_XMD:SHA-256_SSWU_RO_";
-    constexpr const char *prime_hex = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F";
+    constexpr const char *prime_hex =
+        "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F";
     auto p = constant(prime_hex);
     auto a = constant("3F8731ABDD661ADCA08A5558F0F5D272E953D363CB6F0E5D405447C01A444533");
     auto b = constant("6EB"), target_a = constant("0");
     Context ctx(BN_CTX_new(), BN_CTX_free);
-    if (!ctx) throw std::runtime_error("hash-to-curve context allocation failed");
+    if (!ctx)
+        throw std::runtime_error("hash-to-curve context allocation failed");
     const std::vector<std::uint8_t> domain(dst.begin(), dst.end());
     const auto fields = hash_to_field_secp256k1(message, domain, 2);
     std::array<Point, 2> points;
     for (std::size_t i = 0; i < points.size(); ++i) {
         auto u = number();
         ok(BN_bin2bn(fields[i].data(), static_cast<int>(fields[i].size()), u.get()) ? 1 : 0);
-        points[i] = isogeny(map_swu(u.get(), p.get(), a.get(), b.get(), ctx.get()), p.get(), ctx.get());
+        points[i] =
+            isogeny(map_swu(u.get(), p.get(), a.get(), b.get(), ctx.get()), p.get(), ctx.get());
     }
     const auto point = add_points(points[0], points[1], target_a.get(), p.get(), ctx.get());
-    if (point.infinity) return {0};
+    if (point.infinity)
+        return {0};
     std::vector<std::uint8_t> encoded(33);
     encoded[0] = BN_is_odd(point.y.get()) ? 3 : 2;
     if (BN_bn2binpad(point.x.get(), encoded.data() + 1, 32) != 32)

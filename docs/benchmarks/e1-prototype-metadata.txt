@@ -1,0 +1,9 @@
+commit=f3e06fb3f85a7b4def2f6446b4ef8bc984a9abf9
+date_utc=2026-11-04T05:55:11Z
+system=Linux asharda 7.0.0-38-generic #38~24.04.4-Ubuntu SMP PREEMPT_DYNAMIC Mon Sep 14 16:37:11 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
+cpu=12th Gen Intel(R) Core(TM) i5-1240P
+compiler=c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+openssl=OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024)
+cmake=cmake version 3.28.3
+iterations_per_sample=300
+mode=public-input research prototype; variable-time; not a security claim
