@@ -1,9 +1,5 @@
+#include "hta/coordinator.hpp"
 #include "hta/signer.hpp"
-
-#include "hta/framing.hpp"
-#include "hta/scalar_challenge.hpp"
-#include "hta/secp256k1_public.hpp"
-#include "hta/secret_group.hpp"
 
 #include <array>
 #include <atomic>
@@ -17,41 +13,6 @@ hta::SecretScalar secret(std::uint8_t value) {
     return hta::SecretScalar::from_canonical(encoded);
 }
 
-hta::PublicBytes point_field(const hta::PublicBytes &point) { return hta::frame(4, point); }
-
-hta::PublicBytes scalar_bytes(const hta::SecretScalar &scalar) {
-    return {scalar.bytes().begin(), scalar.bytes().end()};
-}
-
-hta::PublicBytes add_points(const hta::PublicBytes &a, const hta::PublicBytes &b) {
-    const auto result = hta::public_point_add(a, b);
-    return result ? *result : hta::PublicBytes{};
-}
-
-hta::PublicBytes session_context(const hta::PublicBytes &sid, const hta::Roster &roster,
-                                 const hta::PublicBytes &message,
-                                 const hta::PublicBytes &masked_key) {
-    hta::PublicBytes subset_payload = hta::frame_integer(1);
-    const auto index2 = hta::frame_integer(2);
-    subset_payload.insert(subset_payload.end(), index2.begin(), index2.end());
-    const auto subset = hta::transcript("SUBSET", {hta::frame(6, subset_payload)});
-    const hta::PublicBytes digest(roster.digest.begin(), roster.digest.end());
-    return hta::transcript("CTX", {hta::frame(2, sid), hta::frame(2, digest),
-                                    hta::frame_integer(2), hta::frame(2, message),
-                                    point_field(masked_key), hta::frame(2, subset)});
-}
-
-hta::PublicBytes signature_challenge(const hta::Roster &roster,
-                                     const hta::PublicBytes &masked_key,
-                                     const hta::PublicBytes &nonce,
-                                     const hta::PublicBytes &message) {
-    const hta::PublicBytes digest(roster.digest.begin(), roster.digest.end());
-    const auto input = hta::transcript("SIG", {hta::frame(2, digest), point_field(masked_key),
-                                                 hta::frame_integer(2), point_field(nonce),
-                                                 hta::frame(2, message)});
-    const auto value = hta::scalar_challenge(input, true);
-    return {value.begin(), value.end()};
-}
 } // namespace
 
 int main() {
@@ -62,12 +23,12 @@ int main() {
     if (!roster)
         return EXIT_FAILURE;
 
-    const auto xi = secret(13);
-    const auto masked_key = add_points(
-        add_points(roster->public_keys[0], roster->public_keys[1]),
-        hta::secret_generator_multiply(xi));
     const hta::PublicBytes sid{'s', 'e', 's', 's', 'i', 'o', 'n', '1'};
     const hta::PublicBytes message{'m', 's', 'g'};
+    auto coordinator = hta::CoordinatorSession::begin(*roster, sid, 2, message, {1, 2}, secret(13));
+    if (!coordinator)
+        return EXIT_FAILURE;
+    const auto masked_key = coordinator->masked_key();
     hta::Signer signer1(1, secret(7));
     hta::Signer signer2(2, secret(11));
     const auto first = signer1.round1(*roster, sid, 2, message, masked_key, {1, 2});
@@ -75,39 +36,38 @@ int main() {
     if (!first || !second || signer1.round1(*roster, sid, 2, message, masked_key, {1, 2}))
         return EXIT_FAILURE;
 
-    const auto aggregate_first = add_points(first->first, second->first);
-    const auto aggregate_second = add_points(first->second, second->second);
-    const std::vector<hta::PublicBytes> beta_fields{
-        hta::frame(2, session_context(sid, *roster, message, masked_key)),
-        point_field(aggregate_first), point_field(aggregate_second)};
-    const auto beta_input = hta::transcript("NON", beta_fields);
-    const auto beta_array = hta::scalar_challenge(beta_input, false);
-    const hta::PublicBytes beta(beta_array.begin(), beta_array.end());
-    const auto weighted_second = hta::public_point_multiply(aggregate_second, beta);
-    const auto nonce = weighted_second ? add_points(aggregate_first, *weighted_second)
-                                       : hta::PublicBytes{};
-    const auto c = signature_challenge(*roster, masked_key, nonce, message);
-    const auto response1 = signer1.round2(sid, aggregate_first, aggregate_second);
-    const auto response2 = signer2.round2(sid, aggregate_first, aggregate_second);
-    if (!response1 || !response2 || signer1.round2(sid, aggregate_first, aggregate_second))
+    const auto aggregate = coordinator->collect_commitments({{1, *first}, {2, *second}});
+    if (!aggregate)
+        return EXIT_FAILURE;
+    const auto response1 = signer1.round2(sid, aggregate->first, aggregate->second);
+    const auto response2 = signer2.round2(sid, aggregate->first, aggregate->second);
+    if (!response1 || !response2 ||
+        signer1.round2(sid, aggregate->first, aggregate->second))
+        return EXIT_FAILURE;
+    const auto signature = coordinator->aggregate_responses({{1, *response1}, {2, *response2}});
+    if (!signature || coordinator->aggregate_responses({{1, *response1}, {2, *response2}}))
         return EXIT_FAILURE;
 
-    const auto aggregate_response = hta::public_scalar_add(*response1, *response2);
-    const auto tweak_response = hta::public_scalar_multiply(c, scalar_bytes(xi));
-    const auto final_response = aggregate_response && tweak_response
-                                    ? hta::public_scalar_add(*aggregate_response, *tweak_response)
-                                    : std::nullopt;
-    const auto left = final_response ? hta::public_generator_multiply(*final_response) : std::nullopt;
-    const auto challenge_key = hta::public_point_multiply(masked_key, c);
-    const auto right = challenge_key ? hta::public_point_add(nonce, *challenge_key) : std::nullopt;
-    if (!left || !right || *left != *right)
+    auto missing_commitments =
+        hta::CoordinatorSession::begin(*roster, {'m', 'i', 's', 's'}, 1, message, {1}, secret(17));
+    if (!missing_commitments || missing_commitments->collect_commitments({}) ||
+        missing_commitments->collect_commitments({}))
+        return EXIT_FAILURE;
+
+    auto invalid_shares =
+        hta::CoordinatorSession::begin(*roster, {'b', 'a', 'd'}, 1, message, {1}, secret(19));
+    if (!invalid_shares ||
+        !invalid_shares->collect_commitments(
+            {{1, {roster->public_keys[0], roster->public_keys[0]}}}) ||
+        invalid_shares->aggregate_responses({{1, hta::PublicBytes(32, 0)}}) ||
+        invalid_shares->aggregate_responses({{1, hta::PublicBytes(32, 0)}}))
         return EXIT_FAILURE;
 
     hta::Signer burn_on_abort(1, secret(7));
     const hta::PublicBytes invalid_sid{'b', 'a', 'd'};
     if (!burn_on_abort.round1(*roster, invalid_sid, 1, message, masked_key, {1}) ||
-        burn_on_abort.round2(invalid_sid, {0}, aggregate_second) ||
-        burn_on_abort.round2(invalid_sid, aggregate_first, aggregate_second))
+        burn_on_abort.round2(invalid_sid, {0}, aggregate->second) ||
+        burn_on_abort.round2(invalid_sid, aggregate->first, aggregate->second))
         return EXIT_FAILURE;
 
     hta::Signer concurrent(1, secret(7));

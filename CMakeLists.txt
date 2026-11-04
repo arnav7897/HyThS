@@ -152,7 +152,12 @@ target_compile_features(hta_signer PUBLIC cxx_std_17)
 target_link_libraries(hta_signer PUBLIC hta_registration PRIVATE hta_secret_group
                       hta_scalar_challenge hta_framing OpenSSL::Crypto)
 add_executable(signer_test tests/signer_test.cpp)
-target_link_libraries(signer_test PRIVATE hta_signer Threads::Threads)
+add_library(hta_coordinator src/coordinator.cpp)
+target_include_directories(hta_coordinator PUBLIC include)
+target_compile_features(hta_coordinator PUBLIC cxx_std_17)
+target_link_libraries(hta_coordinator PUBLIC hta_signer PRIVATE hta_secret_group
+                      hta_secp256k1_public hta_scalar_challenge hta_framing OpenSSL::Crypto)
+target_link_libraries(signer_test PRIVATE hta_coordinator Threads::Threads)
 add_test(NAME signer COMMAND signer_test)
 
 option(HTA_BUILD_BENCH "Build primitive microbenchmarks" OFF)
