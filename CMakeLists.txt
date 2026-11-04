@@ -177,4 +177,6 @@ if(HTA_BUILD_BENCH)
   add_executable(primitive_bench bench/primitive_bench.cpp)
   target_link_libraries(primitive_bench PRIVATE hta_secp256k1_public hta_scalar_challenge
                                                  hta_hash_to_curve)
+  add_executable(protocol_bench bench/protocol_bench.cpp)
+  target_link_libraries(protocol_bench PRIVATE hta_protocol_encoding)
 endif()
