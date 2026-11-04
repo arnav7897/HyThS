@@ -46,9 +46,8 @@ std::optional<RoundTwoResponse> decode_round_two_response(const PublicBytes &inp
 std::optional<PublicBytes> encode_authorization_proof(const AuthorizationProof &proof,
                                                       std::uint32_t roster_size);
 std::optional<AuthorizationProof> decode_authorization_proof(const PublicBytes &input,
-                                                              std::uint32_t roster_size);
+                                                             std::uint32_t roster_size);
 std::optional<PublicBytes> encode_signature(const FinalSignature &signature,
                                             std::uint32_t roster_size);
-std::optional<FinalSignature> decode_signature(const PublicBytes &input,
-                                               std::uint32_t roster_size);
+std::optional<FinalSignature> decode_signature(const PublicBytes &input, std::uint32_t roster_size);
 } // namespace hta

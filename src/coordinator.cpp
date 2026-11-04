@@ -30,13 +30,13 @@ std::optional<PublicBytes> checked_roster_digest(const Roster &roster) {
         const auto encoded = point_field(key);
         payload.insert(payload.end(), encoded.begin(), encoded.end());
     }
-    const auto input = transcript("ROSTER", {frame_integer(roster.public_keys.size()),
-                                               frame(6, payload)});
+    const auto input =
+        transcript("ROSTER", {frame_integer(roster.public_keys.size()), frame(6, payload)});
     std::array<std::uint8_t, 32> digest{};
     std::size_t length = 0;
     if (EVP_Q_digest(nullptr, "SHA256", nullptr, input.data(), input.size(), digest.data(),
-                     &length) != 1 || length != digest.size() ||
-        !std::equal(digest.begin(), digest.end(), roster.digest.begin()))
+                     &length) != 1 ||
+        length != digest.size() || !std::equal(digest.begin(), digest.end(), roster.digest.begin()))
         return std::nullopt;
     return PublicBytes(digest.begin(), digest.end());
 }
@@ -50,9 +50,9 @@ PublicBytes make_context(const PublicBytes &sid, const PublicBytes &digest, std:
         subset_payload.insert(subset_payload.end(), encoded.begin(), encoded.end());
     }
     const auto subset_transcript = transcript("SUBSET", {frame(6, subset_payload)});
-    return transcript("CTX", {frame(2, sid), frame(2, digest), frame_integer(threshold),
-                               frame(2, message), point_field(masked_key),
-                               frame(2, subset_transcript)});
+    return transcript("CTX",
+                      {frame(2, sid), frame(2, digest), frame_integer(threshold), frame(2, message),
+                       point_field(masked_key), frame(2, subset_transcript)});
 }
 
 std::optional<PublicBytes> add(const PublicBytes &left, const PublicBytes &right) {
@@ -65,8 +65,7 @@ CoordinatorSession::CoordinatorSession(PublicBytes digest, std::uint32_t thresho
                                        PublicBytes masked_key, SecretScalar tweak,
                                        PublicBytes context)
     : digest_(std::move(digest)), threshold_(threshold), message_(std::move(message)),
-      subset_(std::move(subset)), masked_key_(std::move(masked_key)),
-      tweak_(std::move(tweak)),
+      subset_(std::move(subset)), masked_key_(std::move(masked_key)), tweak_(std::move(tweak)),
       context_(std::move(context)) {}
 
 void CoordinatorSession::close() noexcept {
@@ -135,8 +134,8 @@ std::optional<AggregateCommitments> CoordinatorSession::collect_commitments(
         return std::nullopt;
     }
 
-    const auto beta_input = transcript("NON", {frame(2, context_), point_field(first),
-                                                  point_field(second)});
+    const auto beta_input =
+        transcript("NON", {frame(2, context_), point_field(first), point_field(second)});
     const auto beta = scalar_challenge(beta_input, false);
     const PublicBytes beta_bytes(beta.begin(), beta.end());
     const auto weighted = public_point_multiply(second, beta_bytes);
@@ -145,17 +144,17 @@ std::optional<AggregateCommitments> CoordinatorSession::collect_commitments(
         close();
         return std::nullopt;
     }
-    const auto signature_input = transcript(
-        "SIG", {frame(2, digest_), point_field(masked_key_), frame_integer(threshold_),
-                point_field(*nonce), frame(2, message_)});
+    const auto signature_input =
+        transcript("SIG", {frame(2, digest_), point_field(masked_key_), frame_integer(threshold_),
+                           point_field(*nonce), frame(2, message_)});
     challenge_ = scalar_challenge(signature_input, false);
     nonce_ = *nonce;
     state_ = State::collecting_responses;
     return AggregateCommitments{std::move(first), std::move(second)};
 }
 
-std::optional<SchnorrSignature> CoordinatorSession::aggregate_responses(
-    const std::map<std::uint64_t, PublicBytes> &responses) {
+std::optional<SchnorrSignature>
+CoordinatorSession::aggregate_responses(const std::map<std::uint64_t, PublicBytes> &responses) {
     if (state_ != State::collecting_responses || responses.size() != subset_.size()) {
         close();
         return std::nullopt;

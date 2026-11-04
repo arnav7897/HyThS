@@ -37,8 +37,8 @@ std::optional<Parameters> validate_public(const Roster &roster, const PublicByte
                                           std::uint32_t threshold, const PublicBytes &message,
                                           const PublicBytes &masked_key) {
     if (roster.public_keys.empty() || roster.public_keys.size() > 65535 ||
-        context.size() > 1024 * 1024 ||
-        message.size() > maximum_message || !valid_public_point(masked_key, false))
+        context.size() > 1024 * 1024 || message.size() > maximum_message ||
+        !valid_public_point(masked_key, false))
         return std::nullopt;
     const auto dims = dimensions(static_cast<std::uint32_t>(roster.public_keys.size()), threshold);
     if (!dims)
@@ -51,12 +51,13 @@ std::optional<Parameters> validate_public(const Roster &roster, const PublicByte
         const auto framed = frame(4, key);
         payload.insert(payload.end(), framed.begin(), framed.end());
     }
-    const auto input = transcript("ROSTER", {frame_integer(roster.public_keys.size()),
-                                               frame(6, payload)});
+    const auto input =
+        transcript("ROSTER", {frame_integer(roster.public_keys.size()), frame(6, payload)});
     std::array<std::uint8_t, 32> digest{};
     std::size_t digest_size = 0;
     if (EVP_Q_digest(nullptr, "SHA256", nullptr, input.data(), input.size(), digest.data(),
-                     &digest_size) != 1 || digest_size != digest.size() ||
+                     &digest_size) != 1 ||
+        digest_size != digest.size() ||
         !std::equal(digest.begin(), digest.end(), roster.digest.begin()))
         return std::nullopt;
     return Parameters{PublicBytes(digest.begin(), digest.end()), *dims};
@@ -118,12 +119,12 @@ SecretScalar secret_inner_product(const std::vector<SecretScalar> &left,
 PublicBytes statement(const PublicBytes &digest, std::uint32_t n, std::uint32_t threshold,
                       const PublicBytes &message, const PublicBytes &masked_key) {
     return transcript("ST", {frame(2, digest), frame_integer(n), frame_integer(threshold),
-                              frame(2, message), frame(4, masked_key)});
+                             frame(2, message), frame(4, masked_key)});
 }
 
 PublicBytes proof_prefix(const PublicBytes &st, const AuthorizationProof &proof) {
-    return transcript("T0", {frame(2, st), frame(4, proof.A), frame(4, proof.S),
-                              frame(4, proof.Qs)});
+    return transcript("T0",
+                      {frame(2, st), frame(4, proof.A), frame(4, proof.S), frame(4, proof.Qs)});
 }
 
 std::vector<PublicBytes> powers(const PublicBytes &y, std::size_t N) {
@@ -141,8 +142,8 @@ std::vector<PublicBytes> powers(const PublicBytes &y, std::size_t N) {
     return result;
 }
 
-std::pair<std::vector<PublicBytes>, std::vector<PublicBytes>> public_chi_w(
-    std::size_t n, const Dimensions &dims) {
+std::pair<std::vector<PublicBytes>, std::vector<PublicBytes>> public_chi_w(std::size_t n,
+                                                                           const Dimensions &dims) {
     std::vector<PublicBytes> chi(dims.N, PublicBytes(32, 0));
     std::vector<PublicBytes> w(dims.N, PublicBytes(32, 0));
     PublicBytes one(32, 0);
@@ -280,9 +281,9 @@ prove_authorization(const Roster &roster, const PublicBytes &generator_context,
         proof.A = A;
         proof.S = Scom;
         proof.Qs = Qs;
-        const auto st = statement(params->digest,
-                                  static_cast<std::uint32_t>(roster.public_keys.size()), threshold,
-                                  message, masked_key);
+        const auto st =
+            statement(params->digest, static_cast<std::uint32_t>(roster.public_keys.size()),
+                      threshold, message, masked_key);
         const auto T0 = proof_prefix(st, proof);
         const auto y = public_challenge(transcript("Y", {frame(2, T0)}), true);
         const auto z = public_challenge(transcript("Z", {frame(2, T0), frame(5, y)}), true);
@@ -322,8 +323,7 @@ prove_authorization(const Roster &roster, const PublicBytes &generator_context,
             r0.push_back(secret_scalar_add(right_scaled, right_weight));
             r1.push_back(secret_scalar_multiply(y_i, sR[i]));
         }
-        auto t1 = secret_scalar_add(secret_inner_product(l0, r1),
-                                    secret_inner_product(sL, r0));
+        auto t1 = secret_scalar_add(secret_inner_product(l0, r1), secret_inner_product(sL, r0));
         auto t2 = secret_inner_product(sL, r1);
         std::vector<SecretScalar> t1_scalars;
         t1_scalars.push_back(clone(t1));
@@ -414,16 +414,15 @@ bool verify_authorization(const Roster &roster, const PublicBytes &generator_con
         auto padded_keys = roster.public_keys;
         padded_keys.insert(padded_keys.end(), params->dims.ell, PublicBytes{0});
         padded_keys.push_back(base_point);
-        const auto st = statement(params->digest,
-                                  static_cast<std::uint32_t>(roster.public_keys.size()), threshold,
-                                  message, masked_key);
+        const auto st =
+            statement(params->digest, static_cast<std::uint32_t>(roster.public_keys.size()),
+                      threshold, message, masked_key);
         const auto T0 = proof_prefix(st, proof);
         const auto y = public_challenge(transcript("Y", {frame(2, T0)}), true);
         const auto z = public_challenge(transcript("Z", {frame(2, T0), frame(5, y)}), true);
-        const auto x = public_challenge(
-            transcript("X", {frame(2, T0), frame(5, y), frame(5, z), frame(4, proof.T1),
-                              frame(4, proof.T2)}),
-            true);
+        const auto x = public_challenge(transcript("X", {frame(2, T0), frame(5, y), frame(5, z),
+                                                         frame(4, proof.T1), frame(4, proof.T2)}),
+                                        true);
         const auto y_values = powers(y, params->dims.N);
         const auto chi_w = public_chi_w(roster.public_keys.size(), params->dims);
 
@@ -433,14 +432,14 @@ bool verify_authorization(const Roster &roster, const PublicBytes &generator_con
         std::vector<PublicBytes> c1_scalars{proof.mu};
         c1_scalars.insert(c1_scalars.end(), proof.vL.begin(), proof.vL.end());
         c1_scalars.insert(c1_scalars.end(), proof.vR.begin(), proof.vR.end());
-        const auto left_c1 = must(public_point_add(
-            proof.A, must(public_point_multiply(proof.S, x))));
+        const auto left_c1 =
+            must(public_point_add(proof.A, must(public_point_multiply(proof.S, x))));
         const auto right_c1 = public_msm(c1_points, c1_scalars);
         if (!right_c1 || left_c1 != *right_c1)
             return false;
 
-        const auto left_c2 = must(public_point_add(
-            masked_key, must(public_point_multiply(proof.Qs, x))));
+        const auto left_c2 =
+            must(public_point_add(masked_key, must(public_point_multiply(proof.Qs, x))));
         const auto right_c2 = public_msm(padded_keys, proof.vL);
         if (!right_c2 || left_c2 != *right_c2)
             return false;
@@ -475,8 +474,8 @@ bool verify_authorization(const Roster &roster, const PublicBytes &generator_con
         threshold_scalar[29] = static_cast<std::uint8_t>(threshold >> 16);
         threshold_scalar[30] = static_cast<std::uint8_t>(threshold >> 8);
         threshold_scalar[31] = static_cast<std::uint8_t>(threshold);
-        const auto theta = must(public_scalar_add(
-            must(public_scalar_multiply(z2, threshold_scalar)), delta));
+        const auto theta =
+            must(public_scalar_add(must(public_scalar_multiply(z2, threshold_scalar)), delta));
         const auto x2 = must(public_scalar_multiply(x, x));
         const auto left_c4 = public_msm({base_point, gens.H0}, {proof.t_hat, proof.tau_x});
         const auto right_c4 = public_msm({base_point, proof.T1, proof.T2}, {theta, x, x2});
@@ -491,12 +490,11 @@ bool verify_signature(const Roster &roster, const PublicBytes &generator_context
                       const FinalSignature &signature) {
     const auto &schnorr = signature.schnorr;
     if (!valid_public_point(schnorr.masked_key, false) ||
-        !valid_public_point(schnorr.nonce, false) ||
-        !valid_public_scalar(schnorr.response))
+        !valid_public_point(schnorr.nonce, false) || !valid_public_scalar(schnorr.response))
         return false;
     try {
-        const auto digest = validate_public(roster, generator_context, threshold, message,
-                                            schnorr.masked_key);
+        const auto digest =
+            validate_public(roster, generator_context, threshold, message, schnorr.masked_key);
         if (!digest)
             return false;
         const auto challenge_input = transcript(
@@ -505,8 +503,8 @@ bool verify_signature(const Roster &roster, const PublicBytes &generator_context
         const auto challenge = public_challenge(challenge_input, false);
         const auto left = public_generator_multiply(schnorr.response);
         const auto weighted_key = public_point_multiply(schnorr.masked_key, challenge);
-        const auto right = weighted_key ? public_point_add(schnorr.nonce, *weighted_key)
-                                        : std::nullopt;
+        const auto right =
+            weighted_key ? public_point_add(schnorr.nonce, *weighted_key) : std::nullopt;
         return left && right && *left == *right &&
                verify_authorization(roster, generator_context, threshold, message,
                                     schnorr.masked_key, signature.authorization);

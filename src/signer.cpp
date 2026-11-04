@@ -29,12 +29,13 @@ std::optional<PublicBytes> roster_context_digest(const Roster &roster) {
         const auto encoded = point_field(key);
         payload.insert(payload.end(), encoded.begin(), encoded.end());
     }
-    const auto input = transcript("ROSTER", {frame_integer(roster.public_keys.size()), frame(6, payload)});
+    const auto input =
+        transcript("ROSTER", {frame_integer(roster.public_keys.size()), frame(6, payload)});
     std::array<std::uint8_t, 32> digest{};
     std::size_t length = 0;
     if (EVP_Q_digest(nullptr, "SHA256", nullptr, input.data(), input.size(), digest.data(),
-                     &length) != 1 || length != digest.size() ||
-        !std::equal(digest.begin(), digest.end(), roster.digest.begin()))
+                     &length) != 1 ||
+        length != digest.size() || !std::equal(digest.begin(), digest.end(), roster.digest.begin()))
         return std::nullopt;
     return PublicBytes(digest.begin(), digest.end());
 }
@@ -48,9 +49,9 @@ PublicBytes make_context(const PublicBytes &sid, const PublicBytes &digest, std:
         subset_payload.insert(subset_payload.end(), encoded.begin(), encoded.end());
     }
     const auto subset_transcript = transcript("SUBSET", {frame(6, subset_payload)});
-    return transcript("CTX", {frame(2, sid), frame(2, digest), frame_integer(threshold),
-                               frame(2, message), point_field(masked_key),
-                               frame(2, subset_transcript)});
+    return transcript("CTX",
+                      {frame(2, sid), frame(2, digest), frame_integer(threshold), frame(2, message),
+                       point_field(masked_key), frame(2, subset_transcript)});
 }
 } // namespace
 
@@ -60,10 +61,11 @@ Signer::Signer(std::uint64_t index, SecretScalar secret_key)
         throw std::invalid_argument("invalid signer key");
 }
 
-std::optional<RoundOneCommitments>
-Signer::round1(const Roster &roster, const PublicBytes &sid, std::uint32_t threshold,
-               const PublicBytes &message, const PublicBytes &masked_key,
-               const std::vector<std::uint64_t> &subset) {
+std::optional<RoundOneCommitments> Signer::round1(const Roster &roster, const PublicBytes &sid,
+                                                  std::uint32_t threshold,
+                                                  const PublicBytes &message,
+                                                  const PublicBytes &masked_key,
+                                                  const std::vector<std::uint64_t> &subset) {
     if (sid.empty() || sid.size() > 256 || message.size() > maximum_message ||
         roster.public_keys.empty() || roster.public_keys.size() > 65535 || threshold == 0 ||
         threshold > roster.public_keys.size() || subset.size() < threshold || subset.empty() ||
@@ -85,11 +87,11 @@ Signer::round1(const Roster &roster, const PublicBytes &sid, std::uint32_t thres
         auto first_nonce = random_secret_scalar();
         auto second_nonce = random_secret_scalar();
         RoundOneCommitments commitments{secret_generator_multiply(first_nonce),
-                                         secret_generator_multiply(second_nonce)};
+                                        secret_generator_multiply(second_nonce)};
         auto context = make_context(sid, *digest, threshold, message, masked_key, subset);
-        sessions_.emplace(sid, Session{std::move(first_nonce), std::move(second_nonce),
-                                        std::move(context), *digest, masked_key, message,
-                                        threshold});
+        sessions_.emplace(sid,
+                          Session{std::move(first_nonce), std::move(second_nonce),
+                                  std::move(context), *digest, masked_key, message, threshold});
         return commitments;
     } catch (...) {
         return std::nullopt;
@@ -108,13 +110,12 @@ std::optional<PublicBytes> Signer::round2(const PublicBytes &sid,
     auto session = std::move(it->second);
     sessions_.erase(it);
 
-    if (!valid_public_point(aggregate_first, false) ||
-        !valid_public_point(aggregate_second, false))
+    if (!valid_public_point(aggregate_first, false) || !valid_public_point(aggregate_second, false))
         return std::nullopt;
     try {
-        const auto beta_transcript = transcript(
-            "NON", {frame(2, session.context), point_field(aggregate_first),
-                    point_field(aggregate_second)});
+        const auto beta_transcript =
+            transcript("NON", {frame(2, session.context), point_field(aggregate_first),
+                               point_field(aggregate_second)});
         const auto beta_array = scalar_challenge(beta_transcript, false);
         const PublicBytes beta(beta_array.begin(), beta_array.end());
         const auto beta_scalar = SecretScalar::from_canonical(beta_array);

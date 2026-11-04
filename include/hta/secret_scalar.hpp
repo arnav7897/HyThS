@@ -32,7 +32,8 @@ class SecretScalar final {
     friend SecretScalar random_secret_scalar();
     friend SecretScalar random_secret_scalar_allow_zero();
     friend SecretScalar testing::random_secret_scalar_with_rng(const testing::RandomBytes &);
-    friend SecretScalar testing::random_secret_scalar_allow_zero_with_rng(const testing::RandomBytes &);
+    friend SecretScalar
+    testing::random_secret_scalar_allow_zero_with_rng(const testing::RandomBytes &);
     friend SecretScalar secret_scalar_add(const SecretScalar &, const SecretScalar &);
     friend SecretScalar secret_scalar_subtract(const SecretScalar &, const SecretScalar &);
     friend SecretScalar secret_scalar_multiply(const SecretScalar &, const SecretScalar &);

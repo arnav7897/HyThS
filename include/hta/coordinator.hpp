@@ -41,9 +41,9 @@ class CoordinatorSession final {
 
   private:
     enum class State { collecting_commitments, collecting_responses, closed };
-    CoordinatorSession(PublicBytes digest, std::uint32_t threshold,
-                       PublicBytes message, std::vector<std::uint64_t> subset,
-                       PublicBytes masked_key, SecretScalar tweak, PublicBytes context);
+    CoordinatorSession(PublicBytes digest, std::uint32_t threshold, PublicBytes message,
+                       std::vector<std::uint64_t> subset, PublicBytes masked_key,
+                       SecretScalar tweak, PublicBytes context);
     void close() noexcept;
 
     PublicBytes digest_;

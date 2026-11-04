@@ -22,10 +22,10 @@ class Signer final {
     Signer(const Signer &) = delete;
     Signer &operator=(const Signer &) = delete;
 
-    std::optional<RoundOneCommitments>
-    round1(const Roster &roster, const PublicBytes &sid, std::uint32_t threshold,
-           const PublicBytes &message, const PublicBytes &masked_key,
-           const std::vector<std::uint64_t> &subset);
+    std::optional<RoundOneCommitments> round1(const Roster &roster, const PublicBytes &sid,
+                                              std::uint32_t threshold, const PublicBytes &message,
+                                              const PublicBytes &masked_key,
+                                              const std::vector<std::uint64_t> &subset);
     std::optional<PublicBytes> round2(const PublicBytes &sid, const PublicBytes &aggregate_first,
                                       const PublicBytes &aggregate_second);
 
