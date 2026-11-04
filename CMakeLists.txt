@@ -171,6 +171,11 @@ target_link_libraries(hta_protocol_encoding PUBLIC hta_authorization PRIVATE hta
 target_link_libraries(signer_test PRIVATE hta_coordinator hta_authorization
                       hta_protocol_encoding Threads::Threads)
 add_test(NAME signer COMMAND signer_test)
+add_executable(protocol_encoding_test tests/protocol_encoding_test.cpp)
+target_compile_definitions(protocol_encoding_test PRIVATE
+                           HTA_VECTOR_FILE="${CMAKE_CURRENT_SOURCE_DIR}/tests/vectors/phase3-wire-vectors.tsv")
+target_link_libraries(protocol_encoding_test PRIVATE hta_protocol_encoding)
+add_test(NAME protocol_encoding COMMAND protocol_encoding_test)
 
 option(HTA_BUILD_BENCH "Build primitive microbenchmarks" OFF)
 if(HTA_BUILD_BENCH)
