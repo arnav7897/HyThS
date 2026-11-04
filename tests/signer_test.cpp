@@ -7,6 +7,7 @@
 #include <array>
 #include <atomic>
 #include <cstdlib>
+#include <stdexcept>
 #include <thread>
 
 namespace {
@@ -323,6 +324,25 @@ int main() {
     distinct_first.join();
     distinct_second.join();
     if (parallel_accepted != 2)
+        return EXIT_FAILURE;
+
+    hta::Signer bounded(1, secret(7), 1);
+    const hta::PublicBytes bounded_sid{'c', 'a', 'p'};
+    const auto bounded_commitments =
+        bounded.round1(*roster, bounded_sid, 1, message, masked_key, {1});
+    if (!bounded_commitments ||
+        bounded.round1(*roster, {'n', 'e', 'w'}, 1, message, masked_key, {1}) ||
+        !bounded.round2(bounded_sid, bounded_commitments->first, bounded_commitments->second) ||
+        bounded.round1(*roster, {'n', 'e', 'w'}, 1, message, masked_key, {1}))
+        return EXIT_FAILURE;
+
+    bool rejected_invalid_capacity = false;
+    try {
+        hta::Signer invalid_capacity(1, secret(7), hta::Signer::maximum_remembered_sessions + 1);
+    } catch (const std::invalid_argument &) {
+        rejected_invalid_capacity = true;
+    }
+    if (!rejected_invalid_capacity)
         return EXIT_FAILURE;
     return EXIT_SUCCESS;
 }

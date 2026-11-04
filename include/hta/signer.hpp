@@ -2,6 +2,7 @@
 
 #include "hta/registration.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <mutex>
@@ -15,10 +16,14 @@ struct RoundOneCommitments {
 };
 
 // Research prototype. mcl secret operations are variable-time. Replay protection is process-local
-// and is lost on restart. Callers must authenticate and pin the roster digest.
+// and is lost on restart. Used IDs remain until process exit; once capacity is full, new sessions
+// are rejected. Callers must authenticate and pin the roster digest.
 class Signer final {
   public:
-    Signer(std::uint64_t index, SecretScalar secret_key);
+    static constexpr std::size_t maximum_remembered_sessions = 65536;
+
+    Signer(std::uint64_t index, SecretScalar secret_key,
+           std::size_t max_used_sessions = maximum_remembered_sessions);
     Signer(const Signer &) = delete;
     Signer &operator=(const Signer &) = delete;
 
@@ -42,6 +47,7 @@ class Signer final {
 
     std::uint64_t index_;
     SecretScalar secret_key_;
+    const std::size_t max_used_sessions_;
     std::mutex mutex_;
     std::set<PublicBytes> used_sessions_;
     std::map<PublicBytes, Session> sessions_;

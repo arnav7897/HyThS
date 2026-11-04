@@ -25,7 +25,6 @@ The protocol benchmark accepts `./build/bench/protocol_bench iterations n thresh
 The optional partial-share check is implemented in the coordinator. Simulator tests validate the equations and programmed-oracle conflict path only; they do not validate the lemma's distributional argument.
 
 - Secret arithmetic uses variable-time mcl. Do not expose secrets to timing or cache observers.
-- Signer replay state is not persistent or crash-safe until a durable store is designed and tested.
-- Used session IDs stay in memory for the signer process lifetime. A bounded or durable replay design is deferred to Phase 5; never evict IDs while relying on them to reject replay.
+- Signer replay state is process-local, not persistent or crash-safe. Phase 5 caps it at 65,536 IDs and rejects new sessions at capacity; IDs are never evicted during the process lifetime.
 - PoP is a heuristic practical mechanism; it does not instantiate the audit's ideal extractable registration.
 - No security review is requested in this work pass. Do not claim audit completion or production readiness.
