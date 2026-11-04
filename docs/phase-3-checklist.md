@@ -10,7 +10,7 @@ Phase 3 implements the audit v5 protocol using the research suite. Code and test
 - [x] Authorization prover and verifier: audit §4.3 Algorithm 2 and §4.4 checks C1–C4. Final verification also checks the Schnorr equation. Tests cover an end-to-end `n=2,t=2` signature, a modified proof, wrong message, and invalid witness.
 - [x] Frozen typed encoders/parsers cover registration, both signing rounds, proof vectors, and final signatures. Enforce labels, tags, nested lengths, canonical values, identity policy, and suite size limits. End-to-end round trips and trailing-byte rejection pass.
 - [ ] Independent suite byte vectors and broader malformed-frame corpus remain open.
-- [ ] Protocol-level benchmark: harness measures registration/roster, both signing rounds, proof generation, verification, and serialized size for n=2,4,8. Capture and commit raw samples plus environment metadata; results are prototype and variable-time.
+- [x] Protocol-level prototype benchmark measures registration/roster, both signing rounds, proof generation, verification, and serialized size for n=2,4,8. Raw data and environment metadata are in `docs/benchmarks/phase-3-prototype.jsonl` and `phase-3-prototype-metadata.txt`; results are variable-time, single-host, and not publication-grade.
 
 ## Limits
 

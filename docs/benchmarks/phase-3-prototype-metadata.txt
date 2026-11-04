@@ -1,0 +1,36 @@
+Protocol prototype benchmark
+============================
+
+Date: 2026-11-04
+Harness revision: 671c234 (feat(bench): add protocol benchmark)
+Command: ./build/bench/protocol_bench 1
+Raw output: docs/benchmarks/phase-3-prototype.jsonl
+Build: CMake bench preset, Release, GCC 13.3.0
+CPU: Intel Core i5-1240P, 12 cores / 16 threads
+OS: Ubuntu 24.04 x86_64, Linux 7.0.0-38-generic
+OpenSSL: 3.0.13
+CMake: 3.28.3
+
+Method
+------
+- Five raw samples per stage, one protocol operation per sample.
+- n = 2, 4, 8; t = ceil(n/2); selected signers are indices 1 through t.
+- Message is 32 repeated bytes. Keys are deterministic benchmark fixtures.
+- Warm public and secret mcl paths before timing. Each sample creates fresh
+  PoPs, roster, session ID, tweak, nonces, and authorization proof blinding.
+- Authorization prove and full verify each derive their generator tuple on
+  every operation; no generator cache is included.
+- `signer_round1` and `signer_round2` measure all selected signers together.
+- `aggregate_responses` includes final Schnorr equation verification.
+- `registration_and_roster` reports five independent setup samples.
+- Signature byte count is measured from the suite encoder.
+
+Limits
+------
+- Single host, one process, no network, no baseline comparisons.
+- mcl secret arithmetic is variable-time. These measurements are not
+  side-channel evidence or a security result.
+- Five samples and one operation per sample are prototype measurements, not
+  publication-grade statistics.
+- Registration uses synthetic keys. Generator context is fixed by the harness.
+- Results depend on compiler, CPU frequency, system load, and current backend.
