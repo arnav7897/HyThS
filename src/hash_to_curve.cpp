@@ -206,6 +206,11 @@ Point isogeny(const Point &point, const BIGNUM *p, BN_CTX *ctx) {
 
 std::vector<std::uint8_t> hash_to_curve_secp256k1(const std::vector<std::uint8_t> &message) {
     const std::string dst = "QUUX-V01-CS02-with-secp256k1_XMD:SHA-256_SSWU_RO_";
+    return hash_to_curve_secp256k1(message, {dst.begin(), dst.end()});
+}
+
+std::vector<std::uint8_t> hash_to_curve_secp256k1(const std::vector<std::uint8_t> &message,
+                                                  const std::vector<std::uint8_t> &dst) {
     constexpr const char *prime_hex =
         "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F";
     auto p = constant(prime_hex);
@@ -214,8 +219,7 @@ std::vector<std::uint8_t> hash_to_curve_secp256k1(const std::vector<std::uint8_t
     Context ctx(BN_CTX_new(), BN_CTX_free);
     if (!ctx)
         throw std::runtime_error("hash-to-curve context allocation failed");
-    const std::vector<std::uint8_t> domain(dst.begin(), dst.end());
-    const auto fields = hash_to_field_secp256k1(message, domain, 2);
+    const auto fields = hash_to_field_secp256k1(message, dst, 2);
     std::array<Point, 2> points;
     for (std::size_t i = 0; i < points.size(); ++i) {
         auto u = number();

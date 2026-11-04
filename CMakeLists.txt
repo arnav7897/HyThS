@@ -109,6 +109,15 @@ add_executable(hash_to_curve_test tests/hash_to_curve_test.cpp)
 target_link_libraries(hash_to_curve_test PRIVATE hta_hash_to_curve)
 add_test(NAME hash_to_curve COMMAND hash_to_curve_test)
 
+add_library(hta_generator_derivation src/generator_derivation.cpp)
+target_include_directories(hta_generator_derivation PUBLIC include)
+target_compile_features(hta_generator_derivation PUBLIC cxx_std_17)
+target_link_libraries(hta_generator_derivation PRIVATE hta_hash_to_curve hta_secp256k1_public
+                                                        hta_framing)
+add_executable(generator_derivation_test tests/generator_derivation_test.cpp)
+target_link_libraries(generator_derivation_test PRIVATE hta_generator_derivation)
+add_test(NAME generator_derivation COMMAND generator_derivation_test)
+
 add_library(hta_secret_scalar src/secret_scalar.cpp)
 target_include_directories(hta_secret_scalar PUBLIC include)
 target_compile_features(hta_secret_scalar PUBLIC cxx_std_17)
