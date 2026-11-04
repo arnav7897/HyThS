@@ -115,6 +115,7 @@ target_compile_features(hta_generator_derivation PUBLIC cxx_std_17)
 target_link_libraries(hta_generator_derivation PRIVATE hta_hash_to_curve hta_secp256k1_public
                                                         hta_framing)
 add_executable(generator_derivation_test tests/generator_derivation_test.cpp)
+target_include_directories(generator_derivation_test PRIVATE src)
 target_link_libraries(generator_derivation_test PRIVATE hta_generator_derivation)
 add_test(NAME generator_derivation COMMAND generator_derivation_test)
 
