@@ -68,6 +68,7 @@ target_include_directories(hta_scalar_challenge PUBLIC include)
 target_compile_features(hta_scalar_challenge PUBLIC cxx_std_17)
 target_link_libraries(hta_scalar_challenge PRIVATE hta_framing OpenSSL::Crypto)
 add_executable(scalar_challenge_test tests/scalar_challenge_test.cpp)
+target_include_directories(scalar_challenge_test PRIVATE src)
 target_link_libraries(scalar_challenge_test PRIVATE hta_scalar_challenge hta_framing)
 add_test(NAME scalar_challenge COMMAND scalar_challenge_test)
 

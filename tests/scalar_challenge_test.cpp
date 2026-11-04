@@ -1,9 +1,12 @@
 #include "hta/framing.hpp"
 #include "hta/scalar_challenge.hpp"
+#include "scalar_challenge_test.hpp"
 
 #include <array>
 #include <cstdint>
 #include <cstdlib>
+#include <limits>
+#include <stdexcept>
 
 int main() {
     const auto indices = hta::frame(
@@ -16,6 +19,47 @@ int main() {
     if (hta::scalar_challenge(input, false) != expected ||
         hta::scalar_challenge(input, true) != expected ||
         hta::scalar_challenge({}, false) == expected)
+        return EXIT_FAILURE;
+
+    unsigned int calls = 0;
+    const auto rejected_then_valid = hta::testing::scalar_challenge_with_hash(
+        {}, false, [&calls](const std::vector<std::uint8_t> &) {
+            std::array<std::uint8_t, 32> value{};
+            if (calls++ == 0)
+                value.fill(0xff);
+            else
+                value.back() = 1;
+            return value;
+        });
+    if (calls != 2 || rejected_then_valid.back() != 1)
+        return EXIT_FAILURE;
+
+    calls = 0;
+    const auto zero_rejected = hta::testing::scalar_challenge_with_hash(
+        {}, true, [&calls](const std::vector<std::uint8_t> &) {
+            std::array<std::uint8_t, 32> value{};
+            if (calls++ != 0)
+                value.back() = 1;
+            return value;
+        });
+    if (calls != 2 || zero_rejected.back() != 1)
+        return EXIT_FAILURE;
+
+    calls = 0;
+    try {
+        (void)hta::testing::scalar_challenge_with_hash(
+            {}, false,
+            [&calls](const std::vector<std::uint8_t> &) {
+                ++calls;
+                std::array<std::uint8_t, 32> value{};
+                value.fill(0xff);
+                return value;
+            },
+            std::numeric_limits<std::uint64_t>::max());
+        return EXIT_FAILURE;
+    } catch (const std::overflow_error &) {
+    }
+    if (calls != 1)
         return EXIT_FAILURE;
     return EXIT_SUCCESS;
 }
