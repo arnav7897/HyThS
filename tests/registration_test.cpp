@@ -27,7 +27,11 @@ int main() {
         repeated->digest != roster->digest)
         return EXIT_FAILURE;
     const auto duplicate_key = hta::create_registration(scalar(7), 2, registry_id);
+    auto identity_key = first;
+    identity_key.public_key = {0};
     if (hta::build_roster({first, duplicate_key}, registry_id) ||
+        hta::verify_registration(identity_key, registry_id) ||
+        hta::build_roster({identity_key}, registry_id) ||
         hta::build_roster({second, first}, registry_id) || hta::build_roster({}, registry_id) ||
         hta::build_roster({first}, {}))
         return EXIT_FAILURE;

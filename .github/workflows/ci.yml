@@ -21,7 +21,9 @@ jobs:
       - run: cmake --build --preset "${{ matrix.preset }}"
       - run: ctest --preset "${{ matrix.preset }}"
       - if: matrix.preset == 'fuzz'
-        run: ./build/fuzz/protocol_fuzz -runs=1000
+        run: |
+          python3 tools/phase4_seed_corpus.py build/fuzz/corpus/ci
+          ./build/fuzz/protocol_fuzz -runs=1000 build/fuzz/corpus/ci
       - run: python3 -m unittest discover -s tests -v
 
   platforms:

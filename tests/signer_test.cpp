@@ -64,6 +64,13 @@ int main() {
     const hta::FinalSignature final_signature{*signature, *proof};
     if (!hta::verify_signature(*roster, generator_context, 2, message, final_signature))
         return EXIT_FAILURE;
+    const auto registration3 = hta::create_registration(secret(17), 3, registry);
+    const auto larger_roster =
+        hta::build_roster({registration1, registration2, registration3}, registry);
+    if (!larger_roster ||
+        hta::verify_signature(*roster, generator_context, 1, message, final_signature) ||
+        hta::verify_signature(*larger_roster, generator_context, 2, message, final_signature))
+        return EXIT_FAILURE;
     const auto encoded_signature = hta::encode_signature(final_signature, 2);
     const auto decoded_signature =
         encoded_signature ? hta::decode_signature(*encoded_signature, 2) : std::nullopt;
@@ -150,16 +157,85 @@ int main() {
     bad_linkage.Qs.back() ^= 1;
     auto bad_inner_product = *proof;
     bad_inner_product.t_hat.back() ^= 1;
+    auto bad_left_coordinate = *proof;
+    bad_left_coordinate.vL[0].back() ^= 1;
+    auto bad_right_coordinate = *proof;
+    bad_right_coordinate.vR[0].back() ^= 1;
+    auto bad_tau_x = *proof;
+    bad_tau_x.tau_x.back() ^= 1;
+    const auto wrong_masked_key = roster->public_keys[1];
     if (hta::verify_authorization(*roster, generator_context, 2, message, signature->masked_key,
                                   tampered_proof) ||
         hta::verify_authorization(*roster, generator_context, 2, message, signature->masked_key,
                                   bad_linkage) ||
         hta::verify_authorization(*roster, generator_context, 2, message, signature->masked_key,
                                   bad_inner_product) ||
+        hta::verify_authorization(*roster, generator_context, 2, message, signature->masked_key,
+                                  bad_left_coordinate) ||
+        hta::verify_authorization(*roster, generator_context, 2, message, signature->masked_key,
+                                  bad_right_coordinate) ||
+        hta::verify_authorization(*roster, generator_context, 2, message, signature->masked_key,
+                                  bad_tau_x) ||
+        hta::verify_authorization(*roster, generator_context, 2, message, wrong_masked_key,
+                                  *proof) ||
         hta::verify_signature(*roster, generator_context, 2, {'x'}, final_signature) ||
         hta::prove_authorization(*roster, generator_context, 2, message, signature->masked_key,
-                                 {1, 0}, {0, 0}, secret(13)))
+                                 {1, 0}, {0, 0}, secret(13)) ||
+        hta::prove_authorization(*roster, generator_context, 2, message, signature->masked_key,
+                                 {2, 0}, {0, 0}, secret(13)) ||
+        hta::prove_authorization(*roster, generator_context, 1, message, signature->masked_key,
+                                 {1, 1}, {0, 0}, secret(13)))
         return EXIT_FAILURE;
+
+    auto bad_A = *proof;
+    bad_A.A.back() ^= 1;
+    auto bad_S = *proof;
+    bad_S.S.back() ^= 1;
+    auto bad_T1 = *proof;
+    bad_T1.T1.back() ^= 1;
+    auto bad_T2 = *proof;
+    bad_T2.T2.back() ^= 1;
+    if (hta::verify_authorization(*roster, generator_context, 2, message, signature->masked_key,
+                                  bad_A) ||
+        hta::verify_authorization(*roster, generator_context, 2, message, signature->masked_key,
+                                  bad_S) ||
+        hta::verify_authorization(*roster, generator_context, 2, message, signature->masked_key,
+                                  bad_T1) ||
+        hta::verify_authorization(*roster, generator_context, 2, message, signature->masked_key,
+                                  bad_T2))
+        return EXIT_FAILURE;
+
+    const hta::PublicBytes identity{0};
+    auto identity_masked_key = final_signature;
+    identity_masked_key.schnorr.masked_key = identity;
+    auto identity_nonce = final_signature;
+    identity_nonce.schnorr.nonce = identity;
+    auto bad_schnorr_response = final_signature;
+    bad_schnorr_response.schnorr.response.assign(32, 0);
+    auto changed_nonce = final_signature;
+    changed_nonce.schnorr.nonce = {0x02, 0x79, 0xbe, 0x66, 0x7e, 0xf9, 0xdc, 0xbb, 0xac,
+                                   0x55, 0xa0, 0x62, 0x95, 0xce, 0x87, 0x0b, 0x07, 0x02,
+                                   0x9b, 0xfc, 0xdb, 0x2d, 0xce, 0x28, 0xd9, 0x59, 0xf2,
+                                   0x81, 0x5b, 0x16, 0xf8, 0x17, 0x98};
+    if (hta::verify_signature(*roster, generator_context, 2, message, identity_masked_key) ||
+        hta::verify_signature(*roster, generator_context, 2, message, identity_nonce) ||
+        hta::verify_signature(*roster, generator_context, 2, message, bad_schnorr_response) ||
+        hta::verify_signature(*roster, generator_context, 2, message, changed_nonce))
+        return EXIT_FAILURE;
+
+    std::vector<hta::AuthorizationProof> identity_proofs(5, *proof);
+    identity_proofs[0].A = identity;
+    identity_proofs[1].S = identity;
+    identity_proofs[2].Qs = identity;
+    identity_proofs[3].T1 = identity;
+    identity_proofs[4].T2 = identity;
+    for (const auto &identity_proof : identity_proofs) {
+        const auto identity_wire = hta::encode_authorization_proof(identity_proof, 2);
+        if (!identity_wire || !hta::decode_authorization_proof(*identity_wire, 2))
+            return EXIT_FAILURE;
+        (void)hta::verify_authorization(*roster, generator_context, 2, message,
+                                        signature->masked_key, identity_proof);
+    }
 
     auto missing_commitments =
         hta::CoordinatorSession::begin(*roster, {'m', 'i', 's', 's'}, 1, message, {1}, secret(17));
@@ -198,6 +274,28 @@ int main() {
     if (!burn_on_abort.round1(*roster, invalid_sid, 1, message, masked_key, {1}) ||
         burn_on_abort.round2(invalid_sid, {0}, aggregate->second) ||
         burn_on_abort.round2(invalid_sid, aggregate->first, aggregate->second))
+        return EXIT_FAILURE;
+
+    hta::Signer changed_context(1, secret(7));
+    const hta::PublicBytes signing_sid{'s', 'i', 'd', '2'};
+    if (!changed_context.round1(*roster, signing_sid, 1, message, masked_key, {1}) ||
+        changed_context.round2({'s', 'i', 'd', '3'}, aggregate->first, aggregate->second) ||
+        !changed_context.round2(signing_sid, aggregate->first, aggregate->second))
+        return EXIT_FAILURE;
+
+    hta::Signer no_round_one(1, secret(7));
+    hta::Signer outside_subset(2, secret(11));
+    hta::Signer below_threshold(1, secret(7));
+    if (no_round_one.round2({'n', 'o'}, aggregate->first, aggregate->second) ||
+        outside_subset.round1(*roster, {'o', 'u', 't'}, 1, message, masked_key, {1}) ||
+        below_threshold.round1(*roster, {'u', 'n', 'd'}, 2, message, masked_key, {1}))
+        return EXIT_FAILURE;
+
+    const auto alternate1 = hta::create_registration(secret(19), 1, registry);
+    const auto alternate2 = hta::create_registration(secret(23), 2, registry);
+    const auto alternate_roster = hta::build_roster({alternate1, alternate2}, registry);
+    if (!alternate_roster ||
+        hta::verify_signature(*alternate_roster, generator_context, 2, message, final_signature))
         return EXIT_FAILURE;
 
     hta::Signer concurrent(1, secret(7));
