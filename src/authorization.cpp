@@ -192,7 +192,10 @@ std::optional<AuthorizationProof>
 prove_authorization(const Roster &roster, const PublicBytes &generator_context,
                     std::uint32_t threshold, const PublicBytes &message,
                     const PublicBytes &masked_key, const std::vector<std::uint8_t> &selectors,
-                    const std::vector<std::uint8_t> &surplus_bits, SecretScalar tweak) {
+                    const std::vector<std::uint8_t> &surplus_bits,
+                    // Move-only ownership transfer keeps secret cleanup local to this call.
+                    // cppcheck-suppress passedByValue
+                    SecretScalar tweak) {
     const auto params = validate_public(roster, generator_context, threshold, message, masked_key);
     if (!params || !tweak.valid() || selectors.size() != roster.public_keys.size() ||
         surplus_bits.size() != params->dims.ell || !bit_vector(selectors) ||

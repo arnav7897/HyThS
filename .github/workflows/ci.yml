@@ -66,7 +66,7 @@ jobs:
       - run: clang-format-18 --dry-run --Werror src/*.cpp include/hta/*.hpp tests/*.cpp
       - run: cmake --preset debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
       - run: clang-tidy-18 -p build/debug src/*.cpp --warnings-as-errors='*'
-      - run: cppcheck --enable=warning,performance,portability --error-exitcode=1 --std=c++17 -I include src tests/*.cpp
+      - run: cppcheck --inline-suppr --enable=warning,performance,portability --error-exitcode=1 --std=c++17 -I include src tests/*.cpp
 
   container-repeatability:
     runs-on: ubuntu-24.04

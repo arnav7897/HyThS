@@ -210,7 +210,7 @@ int main() {
 
     hta::Signer parallel_sessions(1, secret(7));
     std::atomic<unsigned> parallel_accepted{0};
-    auto reserve_distinct = [&](hta::PublicBytes distinct_sid) {
+    auto reserve_distinct = [&](const hta::PublicBytes &distinct_sid) {
         if (parallel_sessions.round1(*roster, distinct_sid, 1, message, masked_key, {1}))
             ++parallel_accepted;
     };
