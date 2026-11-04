@@ -2,8 +2,15 @@
 
 #include <array>
 #include <cstdint>
+#include <functional>
 
 namespace hta {
+class SecretScalar;
+namespace testing {
+using RandomBytes = std::function<int(std::uint8_t *, int)>;
+SecretScalar random_secret_scalar_with_rng(const RandomBytes &random_bytes);
+} // namespace testing
+
 // Move-only secret key material. Destructor and moves wipe owned bytes best-effort.
 class SecretScalar final {
   public:
@@ -20,6 +27,7 @@ class SecretScalar final {
     explicit SecretScalar(const std::array<std::uint8_t, 32> &bytes) noexcept;
     std::array<std::uint8_t, 32> bytes_{};
     friend SecretScalar random_secret_scalar();
+    friend SecretScalar testing::random_secret_scalar_with_rng(const testing::RandomBytes &);
 };
 
 // Uniformly samples a nonzero scalar modulo secp256k1 order using OpenSSL's private RNG.

@@ -31,6 +31,24 @@ bool nonzero(const std::array<std::uint8_t, 32> &value) noexcept {
         combined |= byte;
     return combined != 0;
 }
+
+template <typename RandomBytes> std::array<std::uint8_t, 32> sample(RandomBytes &&random_bytes) {
+    constexpr unsigned int maximum_attempts = 128;
+    for (unsigned int attempt = 0; attempt < maximum_attempts; ++attempt) {
+        std::array<std::uint8_t, 32> candidate{};
+        if (random_bytes(candidate.data(), static_cast<int>(candidate.size())) != 1) {
+            OPENSSL_cleanse(candidate.data(), candidate.size());
+            throw std::runtime_error("OpenSSL private random generator failed");
+        }
+        if (nonzero(candidate) && less_than_order(candidate)) {
+            auto result = candidate;
+            OPENSSL_cleanse(candidate.data(), candidate.size());
+            return result;
+        }
+        OPENSSL_cleanse(candidate.data(), candidate.size());
+    }
+    throw std::runtime_error("scalar rejection limit reached");
+}
 } // namespace
 
 SecretScalar::SecretScalar(const std::array<std::uint8_t, 32> &bytes) noexcept : bytes_(bytes) {}
@@ -53,20 +71,17 @@ SecretScalar::~SecretScalar() { OPENSSL_cleanse(bytes_.data(), bytes_.size()); }
 bool SecretScalar::valid() const noexcept { return nonzero(bytes_) && less_than_order(bytes_); }
 
 SecretScalar random_secret_scalar() {
-    constexpr unsigned int maximum_attempts = 128;
-    for (unsigned int attempt = 0; attempt < maximum_attempts; ++attempt) {
-        std::array<std::uint8_t, 32> candidate{};
-        if (RAND_priv_bytes(candidate.data(), static_cast<int>(candidate.size())) != 1) {
-            OPENSSL_cleanse(candidate.data(), candidate.size());
-            throw std::runtime_error("OpenSSL private random generator failed");
-        }
-        if (nonzero(candidate) && less_than_order(candidate)) {
-            SecretScalar result(candidate);
-            OPENSSL_cleanse(candidate.data(), candidate.size());
-            return result;
-        }
-        OPENSSL_cleanse(candidate.data(), candidate.size());
-    }
-    throw std::runtime_error("scalar rejection limit reached");
+    auto candidate =
+        sample([](std::uint8_t *output, int length) { return RAND_priv_bytes(output, length); });
+    SecretScalar result(candidate);
+    OPENSSL_cleanse(candidate.data(), candidate.size());
+    return result;
+}
+
+SecretScalar testing::random_secret_scalar_with_rng(const RandomBytes &random_bytes) {
+    auto candidate = sample(random_bytes);
+    SecretScalar result(candidate);
+    OPENSSL_cleanse(candidate.data(), candidate.size());
+    return result;
 }
 } // namespace hta
