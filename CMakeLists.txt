@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 project(hta_schnorr LANGUAGES CXX)
 
 find_package(OpenSSL 3 REQUIRED COMPONENTS Crypto)
+find_package(Threads REQUIRED)
 
 include(FetchContent)
 if(POLICY CMP0135)
@@ -144,6 +145,15 @@ target_link_libraries(hta_registration PRIVATE hta_secret_group hta_scalar_chall
 add_executable(registration_test tests/registration_test.cpp)
 target_link_libraries(registration_test PRIVATE hta_registration)
 add_test(NAME registration COMMAND registration_test)
+
+add_library(hta_signer src/signer.cpp)
+target_include_directories(hta_signer PUBLIC include)
+target_compile_features(hta_signer PUBLIC cxx_std_17)
+target_link_libraries(hta_signer PUBLIC hta_registration PRIVATE hta_secret_group
+                      hta_scalar_challenge hta_framing OpenSSL::Crypto)
+add_executable(signer_test tests/signer_test.cpp)
+target_link_libraries(signer_test PRIVATE hta_signer Threads::Threads)
+add_test(NAME signer COMMAND signer_test)
 
 option(HTA_BUILD_BENCH "Build primitive microbenchmarks" OFF)
 if(HTA_BUILD_BENCH)
