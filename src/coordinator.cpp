@@ -60,11 +60,13 @@ std::optional<PublicBytes> add(const PublicBytes &left, const PublicBytes &right
 }
 } // namespace
 
-CoordinatorSession::CoordinatorSession(PublicBytes digest, std::uint32_t threshold,
+CoordinatorSession::CoordinatorSession(PublicBytes digest, std::vector<PublicBytes> roster_keys,
+                                       std::uint32_t threshold,
                                        PublicBytes message, std::vector<std::uint64_t> subset,
                                        PublicBytes masked_key, SecretScalar tweak,
                                        PublicBytes context)
-    : digest_(std::move(digest)), threshold_(threshold), message_(std::move(message)),
+    : digest_(std::move(digest)), roster_keys_(std::move(roster_keys)), threshold_(threshold),
+      message_(std::move(message)),
       subset_(std::move(subset)), masked_key_(std::move(masked_key)), tweak_(std::move(tweak)),
       context_(std::move(context)) {}
 
@@ -101,8 +103,8 @@ CoordinatorSession::begin(const Roster &roster, const PublicBytes &sid, std::uin
     if (!masked_key || !valid_public_point(*masked_key, false))
         return std::nullopt;
     auto context = make_context(sid, *digest, threshold, message, *masked_key, subset);
-    return CoordinatorSession(*digest, threshold, message, std::move(subset), *masked_key,
-                              std::move(tweak), std::move(context));
+    return CoordinatorSession(*digest, roster.public_keys, threshold, message, std::move(subset),
+                              *masked_key, std::move(tweak), std::move(context));
 }
 
 std::optional<AggregateCommitments> CoordinatorSession::collect_commitments(
@@ -148,9 +150,30 @@ std::optional<AggregateCommitments> CoordinatorSession::collect_commitments(
         transcript("SIG", {frame(2, digest_), point_field(masked_key_), frame_integer(threshold_),
                            point_field(*nonce), frame(2, message_)});
     challenge_ = scalar_challenge(signature_input, false);
+    nonce_challenge_ = beta_bytes;
     nonce_ = *nonce;
+    commitments_ = commitments;
     state_ = State::collecting_responses;
     return AggregateCommitments{std::move(first), std::move(second)};
+}
+
+bool CoordinatorSession::verify_partial_response(std::uint64_t index,
+                                                  const PublicBytes &response) const {
+    if (state_ != State::collecting_responses ||
+        !std::binary_search(subset_.begin(), subset_.end(), index) || index == 0 ||
+        index > roster_keys_.size() || !valid_public_scalar(response))
+        return false;
+    const auto found = commitments_.find(index);
+    if (found == commitments_.end() || !valid_public_point(found->second.first, false) ||
+        !valid_public_point(found->second.second, false))
+        return false;
+    const auto weighted_nonce = public_point_multiply(found->second.second, nonce_challenge_);
+    const auto nonce = weighted_nonce ? add(found->second.first, *weighted_nonce) : std::nullopt;
+    const PublicBytes signature_challenge(challenge_.begin(), challenge_.end());
+    const auto weighted_key = public_point_multiply(roster_keys_[index - 1], signature_challenge);
+    const auto right = nonce && weighted_key ? add(*nonce, *weighted_key) : std::nullopt;
+    const auto left = public_generator_multiply(response);
+    return left && right && *left == *right;
 }
 
 std::optional<SchnorrSignature>

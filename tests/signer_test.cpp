@@ -44,7 +44,13 @@ int main() {
         return EXIT_FAILURE;
     const auto response1 = signer1.round2(sid, aggregate->first, aggregate->second);
     const auto response2 = signer2.round2(sid, aggregate->first, aggregate->second);
-    if (!response1 || !response2 || signer1.round2(sid, aggregate->first, aggregate->second))
+    if (!response1 || !response2 || signer1.round2(sid, aggregate->first, aggregate->second) ||
+        !coordinator->verify_partial_response(1, *response1) ||
+        !coordinator->verify_partial_response(2, *response2))
+        return EXIT_FAILURE;
+    auto bad_partial = *response1;
+    bad_partial.back() ^= 1;
+    if (coordinator->verify_partial_response(1, bad_partial))
         return EXIT_FAILURE;
     const auto signature = coordinator->aggregate_responses({{1, *response1}, {2, *response2}});
     if (!signature || coordinator->aggregate_responses({{1, *response1}, {2, *response2}}))
