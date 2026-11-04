@@ -18,6 +18,8 @@ Phase 3 implements the audit v5 protocol using the research suite. Code and test
 
 The simulator and KAT are CTest targets. Build the randomized runner with `cmake --preset release && cmake --build --preset release --target phase3_completeness`; run `./build/release/phase3_completeness 10000` to repeat the 40,000-run matrix.
 
+The protocol benchmark accepts `./build/bench/protocol_bench iterations n threshold [signers]`. `iterations` is 1–100 per sample; `signers` defaults to `threshold` and may be set up to `n`. It emits JSON lines, including partial-share verification time. With no `n threshold`, it retains the default `(2,1)`, `(4,2)`, `(8,4)` benchmark matrix. A ten-iteration sample for the same matrix as the completeness runner is saved in `docs/benchmarks/phase3-parameter-matrix.jsonl` with metadata alongside it.
+
 ## Limits
 
 The optional partial-share check is implemented in the coordinator. Simulator tests validate the equations and programmed-oracle conflict path only; they do not validate the lemma's distributional argument.

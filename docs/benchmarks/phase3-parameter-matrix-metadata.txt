@@ -1,0 +1,16 @@
+Phase 3 protocol parameter-matrix benchmark
+Date: 2026-11-04
+Command: protocol_bench 10 n threshold signers
+Build: CMake bench preset (Release), GCC 13.3.0, OpenSSL 3.0.13
+Host: Linux x86_64, Ubuntu 24.04
+Sampling: five samples, ten protocol iterations per sample
+Raw JSONL: phase3-parameter-matrix.jsonl
+
+Cases:
+(n,t,|S|) = (1,1,1), (2,1,1), (2,1,2), (2,2,2), (3,2,2), (3,2,3)
+
+The output reports roster setup, signer rounds, commitment/response aggregation,
+partial-share verification, authorization proof generation, full verification,
+serialization time, and serialized signature size. Measurements are a small,
+single-host prototype sample. Secret arithmetic is variable-time; these numbers
+are not publication-grade security or performance evidence.
