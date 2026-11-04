@@ -91,11 +91,10 @@ SecretScalar SecretScalar::from_canonical(const std::array<std::uint8_t, 32> &by
 
 SecretScalar random_secret_scalar() {
     auto candidate = testing_random_bytes
-                        ? sample(*testing_random_bytes, true)
-                        : sample([](std::uint8_t *output, int length) {
-                              return RAND_priv_bytes(output, length);
-                          },
-                          true);
+                         ? sample(*testing_random_bytes, true)
+                         : sample([](std::uint8_t *output,
+                                     int length) { return RAND_priv_bytes(output, length); },
+                                  true);
     SecretScalar result(candidate);
     OPENSSL_cleanse(candidate.data(), candidate.size());
     return result;
@@ -103,11 +102,10 @@ SecretScalar random_secret_scalar() {
 
 SecretScalar random_secret_scalar_allow_zero() {
     auto candidate = testing_random_bytes
-                        ? sample(*testing_random_bytes, false)
-                        : sample([](std::uint8_t *output, int length) {
-                              return RAND_priv_bytes(output, length);
-                          },
-                          false);
+                         ? sample(*testing_random_bytes, false)
+                         : sample([](std::uint8_t *output,
+                                     int length) { return RAND_priv_bytes(output, length); },
+                                  false);
     SecretScalar result(candidate);
     OPENSSL_cleanse(candidate.data(), candidate.size());
     return result;

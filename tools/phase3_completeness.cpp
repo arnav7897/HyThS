@@ -64,10 +64,10 @@ void run_parameter_set(std::uint32_t n, std::uint32_t threshold, std::uint64_t c
         std::map<std::uint64_t, std::unique_ptr<hta::Signer>> signers;
         std::map<std::uint64_t, hta::RoundOneCommitments> commitments;
         for (const auto index : subset) {
-            auto signer = std::make_unique<hta::Signer>(
-                index, scalar(static_cast<std::uint32_t>(index + 1)));
-            const auto response = signer->round1(*roster, sid, threshold, message,
-                                                 coordinator->masked_key(), subset);
+            auto signer =
+                std::make_unique<hta::Signer>(index, scalar(static_cast<std::uint32_t>(index + 1)));
+            const auto response =
+                signer->round1(*roster, sid, threshold, message, coordinator->masked_key(), subset);
             if (!response)
                 throw std::runtime_error("round one failed at run " + std::to_string(run));
             commitments.emplace(index, *response);

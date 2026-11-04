@@ -86,9 +86,9 @@ PublicBytes must(std::optional<PublicBytes> value) {
     return std::move(*value);
 }
 
-PublicBytes context(const PublicBytes &sid, const hta::Roster &roster,
-                    std::uint32_t threshold, const PublicBytes &message,
-                    const PublicBytes &masked_key, const std::vector<std::uint64_t> &subset) {
+PublicBytes context(const PublicBytes &sid, const hta::Roster &roster, std::uint32_t threshold,
+                    const PublicBytes &message, const PublicBytes &masked_key,
+                    const std::vector<std::uint64_t> &subset) {
     PublicBytes subset_bytes;
     for (const auto index : subset) {
         const auto encoded = hta::frame_integer(index);
@@ -185,15 +185,16 @@ std::string generate(const char *request_path) {
     const auto ctx = context(sid, *roster, threshold, message, masked_key, subset);
     const auto beta = hta::scalar_challenge(
         hta::transcript("NON", {hta::frame(2, ctx), hta::frame(4, aggregate->first),
-                                hta::frame(4, aggregate->second)}), false);
+                                hta::frame(4, aggregate->second)}),
+        false);
     const PublicBytes beta_bytes(beta.begin(), beta.end());
-    const auto weighted_nonce =
-        must(hta::public_point_multiply(aggregate->second, beta_bytes));
+    const auto weighted_nonce = must(hta::public_point_multiply(aggregate->second, beta_bytes));
     const auto nonce = must(hta::public_point_add(aggregate->first, weighted_nonce));
     const auto challenge = hta::scalar_challenge(
         hta::transcript("SIG", {hta::frame(2, digest_bytes), hta::frame(4, masked_key),
                                 hta::frame_integer(threshold), hta::frame(4, nonce),
-                                hta::frame(2, message)}), false);
+                                hta::frame(2, message)}),
+        false);
 
     std::ostringstream output;
     output << "format=hta-phase3-kat-v1\n";

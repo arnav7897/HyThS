@@ -61,14 +61,12 @@ std::optional<PublicBytes> add(const PublicBytes &left, const PublicBytes &right
 } // namespace
 
 CoordinatorSession::CoordinatorSession(PublicBytes digest, std::vector<PublicBytes> roster_keys,
-                                       std::uint32_t threshold,
-                                       PublicBytes message, std::vector<std::uint64_t> subset,
-                                       PublicBytes masked_key, SecretScalar tweak,
-                                       PublicBytes context)
+                                       std::uint32_t threshold, PublicBytes message,
+                                       std::vector<std::uint64_t> subset, PublicBytes masked_key,
+                                       SecretScalar tweak, PublicBytes context)
     : digest_(std::move(digest)), roster_keys_(std::move(roster_keys)), threshold_(threshold),
-      message_(std::move(message)),
-      subset_(std::move(subset)), masked_key_(std::move(masked_key)), tweak_(std::move(tweak)),
-      context_(std::move(context)) {}
+      message_(std::move(message)), subset_(std::move(subset)), masked_key_(std::move(masked_key)),
+      tweak_(std::move(tweak)), context_(std::move(context)) {}
 
 void CoordinatorSession::close() noexcept {
     state_ = State::closed;
@@ -158,7 +156,7 @@ std::optional<AggregateCommitments> CoordinatorSession::collect_commitments(
 }
 
 bool CoordinatorSession::verify_partial_response(std::uint64_t index,
-                                                  const PublicBytes &response) const {
+                                                 const PublicBytes &response) const {
     if (state_ != State::collecting_responses ||
         !std::binary_search(subset_.begin(), subset_.end(), index) || index == 0 ||
         index > roster_keys_.size() || !valid_public_scalar(response))

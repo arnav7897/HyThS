@@ -427,10 +427,9 @@ bool verify_authorization_impl(const Roster &roster, const PublicBytes &generato
         const auto T0 = proof_prefix(st, proof);
         const auto y = challenge_provider(transcript("Y", {frame(2, T0)}), true);
         const auto z = challenge_provider(transcript("Z", {frame(2, T0), frame(5, y)}), true);
-        const auto x = challenge_provider(
-            transcript("X", {frame(2, T0), frame(5, y), frame(5, z), frame(4, proof.T1),
-                              frame(4, proof.T2)}),
-            true);
+        const auto x = challenge_provider(transcript("X", {frame(2, T0), frame(5, y), frame(5, z),
+                                                           frame(4, proof.T1), frame(4, proof.T2)}),
+                                          true);
         const auto y_values = powers(y, params->dims.N);
         const auto chi_w = public_chi_w(roster.public_keys.size(), params->dims);
 
