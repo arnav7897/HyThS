@@ -193,6 +193,12 @@ add_test(NAME phase3_kat
 add_executable(phase3_completeness tools/phase3_completeness.cpp)
 target_link_libraries(phase3_completeness PRIVATE hta_protocol_encoding)
 
+if(HTA_INSTRUMENTATION STREQUAL "fuzz")
+  add_executable(protocol_fuzz fuzz/protocol_fuzz.cpp)
+  target_link_libraries(protocol_fuzz PRIVATE hta_protocol_encoding)
+  target_link_options(protocol_fuzz PRIVATE -fsanitize=fuzzer)
+endif()
+
 option(HTA_BUILD_BENCH "Build primitive microbenchmarks" OFF)
 if(HTA_BUILD_BENCH)
   add_executable(primitive_bench bench/primitive_bench.cpp)
