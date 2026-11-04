@@ -86,3 +86,11 @@ target_link_libraries(hta_hash_to_field PRIVATE hta_expand_message OpenSSL::Cryp
 add_executable(hash_to_field_test tests/hash_to_field_test.cpp)
 target_link_libraries(hash_to_field_test PRIVATE hta_hash_to_field)
 add_test(NAME hash_to_field COMMAND hash_to_field_test)
+
+add_library(hta_hash_to_curve src/hash_to_curve.cpp)
+target_include_directories(hta_hash_to_curve PUBLIC include)
+target_compile_features(hta_hash_to_curve PUBLIC cxx_std_17)
+target_link_libraries(hta_hash_to_curve PRIVATE hta_hash_to_field OpenSSL::Crypto)
+add_executable(hash_to_curve_test tests/hash_to_curve_test.cpp)
+target_link_libraries(hash_to_curve_test PRIVATE hta_hash_to_curve)
+add_test(NAME hash_to_curve COMMAND hash_to_curve_test)
