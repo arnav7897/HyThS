@@ -79,6 +79,6 @@ jobs:
           for build in first second; do
             docker build --no-cache --provenance=false -t "hta-check:$build" .
             docker run --rm "hta-check:$build" sh -c \
-              "dpkg-query -W -f='\${binary:Package}=\${Version}\n' | LC_ALL=C sort; sha256sum /src/build/debug/scaffold_smoke /src/build/debug/framing_test /src/build/debug/parameters_test /src/build/debug/expand_message_test /src/build/debug/scalar_challenge_test /src/build/debug/secp256k1_public_test /src/build/debug/operation_counters_test /src/build/debug/hash_to_field_test /src/build/debug/hash_to_curve_test /src/build/debug/generator_derivation_test /src/build/debug/secret_scalar_test /src/build/debug/secret_group_test" > "/tmp/hta-$build.txt"
+              "dpkg-query -W -f='\${binary:Package}=\${Version}\n' | LC_ALL=C sort; sha256sum /src/build/debug/scaffold_smoke /src/build/debug/framing_test /src/build/debug/parameters_test /src/build/debug/expand_message_test /src/build/debug/scalar_challenge_test /src/build/debug/secp256k1_public_test /src/build/debug/operation_counters_test /src/build/debug/hash_to_field_test /src/build/debug/hash_to_curve_test /src/build/debug/generator_derivation_test /src/build/debug/secret_scalar_test /src/build/debug/secret_group_test /src/build/debug/registration_test" > "/tmp/hta-$build.txt"
           done
           diff -u /tmp/hta-first.txt /tmp/hta-second.txt

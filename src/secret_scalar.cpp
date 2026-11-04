@@ -1,5 +1,7 @@
 #include "hta/secret_scalar.hpp"
 
+#include "hta/framing.hpp"
+
 #include <algorithm>
 #include <stdexcept>
 
@@ -74,6 +76,13 @@ SecretScalar::~SecretScalar() { OPENSSL_cleanse(bytes_.data(), bytes_.size()); }
 
 bool SecretScalar::valid(bool require_nonzero) const noexcept {
     return initialized_ && less_than_order(bytes_) && (!require_nonzero || nonzero(bytes_));
+}
+
+SecretScalar SecretScalar::from_canonical(const std::array<std::uint8_t, 32> &bytes) {
+    const std::vector<std::uint8_t> encoded(bytes.begin(), bytes.end());
+    if (!is_canonical_scalar(encoded))
+        throw std::invalid_argument("secret scalar encoding is not canonical");
+    return SecretScalar(bytes);
 }
 
 SecretScalar random_secret_scalar() {

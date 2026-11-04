@@ -21,6 +21,7 @@ class SecretScalar final {
     SecretScalar &operator=(SecretScalar &&other) noexcept;
     ~SecretScalar();
 
+    static SecretScalar from_canonical(const std::array<std::uint8_t, 32> &bytes);
     const std::array<std::uint8_t, 32> &bytes() const noexcept { return bytes_; }
     bool valid(bool require_nonzero = true) const noexcept;
 
