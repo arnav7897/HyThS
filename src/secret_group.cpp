@@ -90,6 +90,18 @@ SecretScalar secret_scalar_add(const SecretScalar &left, const SecretScalar &rig
     return output;
 }
 
+SecretScalar secret_scalar_subtract(const SecretScalar &left, const SecretScalar &right) {
+    initialize();
+    mcl::Fr a, b, result;
+    if (!decode_secret(left, a) || !decode_secret(right, b))
+        throw std::invalid_argument("invalid secret scalar");
+    mcl::Fr::sub(result, a, b);
+    auto encoded = encode_secret(result);
+    SecretScalar output(encoded);
+    OPENSSL_cleanse(encoded.data(), encoded.size());
+    return output;
+}
+
 SecretScalar secret_scalar_multiply(const SecretScalar &left, const SecretScalar &right) {
     initialize();
     mcl::Fr a, b, result;

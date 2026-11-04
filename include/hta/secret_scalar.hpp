@@ -10,6 +10,7 @@ class SecretScalar;
 namespace testing {
 using RandomBytes = std::function<int(std::uint8_t *, int)>;
 SecretScalar random_secret_scalar_with_rng(const RandomBytes &random_bytes);
+SecretScalar random_secret_scalar_allow_zero_with_rng(const RandomBytes &random_bytes);
 } // namespace testing
 
 // Move-only secret key material. Destructor and moves wipe owned bytes best-effort.
@@ -29,8 +30,11 @@ class SecretScalar final {
     explicit SecretScalar(const std::array<std::uint8_t, 32> &bytes) noexcept;
     std::array<std::uint8_t, 32> bytes_{};
     friend SecretScalar random_secret_scalar();
+    friend SecretScalar random_secret_scalar_allow_zero();
     friend SecretScalar testing::random_secret_scalar_with_rng(const testing::RandomBytes &);
+    friend SecretScalar testing::random_secret_scalar_allow_zero_with_rng(const testing::RandomBytes &);
     friend SecretScalar secret_scalar_add(const SecretScalar &, const SecretScalar &);
+    friend SecretScalar secret_scalar_subtract(const SecretScalar &, const SecretScalar &);
     friend SecretScalar secret_scalar_multiply(const SecretScalar &, const SecretScalar &);
     friend std::vector<std::uint8_t> secret_generator_multiply(const SecretScalar &);
     friend std::vector<std::uint8_t> secret_point_multiply(const std::vector<std::uint8_t> &,
@@ -40,4 +44,6 @@ class SecretScalar final {
 
 // Uniformly samples a nonzero scalar modulo secp256k1 order using OpenSSL's private RNG.
 SecretScalar random_secret_scalar();
+// Uniformly samples a scalar from the full field, including zero.
+SecretScalar random_secret_scalar_allow_zero();
 } // namespace hta

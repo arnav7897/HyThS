@@ -64,6 +64,14 @@ int main() {
     if (calls != 2 || !sampled.valid() || sampled.bytes().back() != 1)
         return EXIT_FAILURE;
 
+    sampled = hta::testing::random_secret_scalar_allow_zero_with_rng(
+        [](std::uint8_t *output, int length) {
+            std::fill(output, output + length, 0);
+            return length == 32 ? 1 : 0;
+        });
+    if (!sampled.valid(false) || sampled.valid())
+        return EXIT_FAILURE;
+
     calls = 0;
     try {
         (void)hta::testing::random_secret_scalar_with_rng([&calls](std::uint8_t *, int) {

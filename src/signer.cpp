@@ -131,7 +131,7 @@ std::optional<PublicBytes> Signer::round2(const PublicBytes &sid,
             frame(2, session.roster_digest), point_field(session.masked_key),
             frame_integer(session.threshold), point_field(*nonce_point), frame(2, session.message)};
         const auto challenge_transcript = transcript("SIG", challenge_fields);
-        const auto challenge = scalar_challenge(challenge_transcript, true);
+        const auto challenge = scalar_challenge(challenge_transcript, false);
         const auto challenge_scalar = SecretScalar::from_canonical(challenge);
         auto key_product = secret_scalar_multiply(challenge_scalar, secret_key_);
         auto response = secret_scalar_add(nonce, key_product);

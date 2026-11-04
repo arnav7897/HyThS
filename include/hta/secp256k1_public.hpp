@@ -12,6 +12,8 @@ using PublicBytes = std::vector<std::uint8_t>;
 bool valid_public_scalar(const PublicBytes &encoded) noexcept;
 bool valid_public_point(const PublicBytes &encoded, bool allow_identity);
 std::optional<PublicBytes> public_scalar_add(const PublicBytes &left, const PublicBytes &right);
+std::optional<PublicBytes> public_scalar_subtract(const PublicBytes &left,
+                                                  const PublicBytes &right);
 std::optional<PublicBytes> public_scalar_multiply(const PublicBytes &left,
                                                   const PublicBytes &right);
 std::optional<PublicBytes> public_point_add(const PublicBytes &left, const PublicBytes &right);

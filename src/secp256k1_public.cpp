@@ -133,6 +133,17 @@ std::optional<PublicBytes> public_scalar_add(const PublicBytes &left, const Publ
     return encode_scalar(result);
 }
 
+std::optional<PublicBytes> public_scalar_subtract(const PublicBytes &left,
+                                                  const PublicBytes &right) {
+    initialize();
+    mcl::Fr a, b, result;
+    if (!decode_scalar(left, a) || !decode_scalar(right, b))
+        return std::nullopt;
+    HTA_INCREMENT(scalar_add, 1);
+    mcl::Fr::sub(result, a, b);
+    return encode_scalar(result);
+}
+
 std::optional<PublicBytes> public_scalar_multiply(const PublicBytes &left,
                                                   const PublicBytes &right) {
     initialize();

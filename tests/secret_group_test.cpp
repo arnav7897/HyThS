@@ -25,8 +25,9 @@ int main() {
     const auto two = scalar(2);
     const auto three = scalar(3);
     const auto five = hta::secret_scalar_add(two, three);
+    const auto difference = hta::secret_scalar_subtract(five, three);
     const auto six = hta::secret_scalar_multiply(two, three);
-    if (!five.valid() || !six.valid() ||
+    if (!five.valid() || !six.valid() || bytes(difference) != bytes(two) ||
         bytes(five) != *hta::public_scalar_add(bytes(two), bytes(three)) ||
         bytes(six) != *hta::public_scalar_multiply(bytes(two), bytes(three)))
         return EXIT_FAILURE;

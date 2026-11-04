@@ -34,7 +34,8 @@ bool nonzero(const std::array<std::uint8_t, 32> &value) noexcept {
     return combined != 0;
 }
 
-template <typename RandomBytes> std::array<std::uint8_t, 32> sample(RandomBytes &&random_bytes) {
+template <typename RandomBytes>
+std::array<std::uint8_t, 32> sample(RandomBytes &&random_bytes, bool require_nonzero) {
     constexpr unsigned int maximum_attempts = 128;
     for (unsigned int attempt = 0; attempt < maximum_attempts; ++attempt) {
         std::array<std::uint8_t, 32> candidate{};
@@ -42,7 +43,7 @@ template <typename RandomBytes> std::array<std::uint8_t, 32> sample(RandomBytes 
             OPENSSL_cleanse(candidate.data(), candidate.size());
             throw std::runtime_error("OpenSSL private random generator failed");
         }
-        if (nonzero(candidate) && less_than_order(candidate)) {
+        if ((!require_nonzero || nonzero(candidate)) && less_than_order(candidate)) {
             auto result = candidate;
             OPENSSL_cleanse(candidate.data(), candidate.size());
             return result;
@@ -86,15 +87,30 @@ SecretScalar SecretScalar::from_canonical(const std::array<std::uint8_t, 32> &by
 }
 
 SecretScalar random_secret_scalar() {
-    auto candidate =
-        sample([](std::uint8_t *output, int length) { return RAND_priv_bytes(output, length); });
+    auto candidate = sample(
+        [](std::uint8_t *output, int length) { return RAND_priv_bytes(output, length); }, true);
+    SecretScalar result(candidate);
+    OPENSSL_cleanse(candidate.data(), candidate.size());
+    return result;
+}
+
+SecretScalar random_secret_scalar_allow_zero() {
+    auto candidate = sample(
+        [](std::uint8_t *output, int length) { return RAND_priv_bytes(output, length); }, false);
     SecretScalar result(candidate);
     OPENSSL_cleanse(candidate.data(), candidate.size());
     return result;
 }
 
 SecretScalar testing::random_secret_scalar_with_rng(const RandomBytes &random_bytes) {
-    auto candidate = sample(random_bytes);
+    auto candidate = sample(random_bytes, true);
+    SecretScalar result(candidate);
+    OPENSSL_cleanse(candidate.data(), candidate.size());
+    return result;
+}
+
+SecretScalar testing::random_secret_scalar_allow_zero_with_rng(const RandomBytes &random_bytes) {
+    auto candidate = sample(random_bytes, false);
     SecretScalar result(candidate);
     OPENSSL_cleanse(candidate.data(), candidate.size());
     return result;

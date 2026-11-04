@@ -1,4 +1,5 @@
 #include "hta/coordinator.hpp"
+#include "hta/authorization.hpp"
 #include "hta/signer.hpp"
 
 #include <array>
@@ -46,6 +47,36 @@ int main() {
         return EXIT_FAILURE;
     const auto signature = coordinator->aggregate_responses({{1, *response1}, {2, *response2}});
     if (!signature || coordinator->aggregate_responses({{1, *response1}, {2, *response2}}))
+        return EXIT_FAILURE;
+
+    const hta::PublicBytes generator_context{'p', 'r', 'o', 'o', 'f', '-', 'c', 't', 'x'};
+    const auto proof = hta::prove_authorization(*roster, generator_context, 2, message,
+                                               signature->masked_key, {1, 1}, {0, 0}, secret(13));
+    if (!proof)
+        return EXIT_FAILURE;
+    const hta::FinalSignature final_signature{*signature, *proof};
+    if (!hta::verify_signature(*roster, generator_context, 2, message, final_signature))
+        return EXIT_FAILURE;
+    const auto surplus_proof = hta::prove_authorization(
+        *roster, generator_context, 1, message, signature->masked_key, {1, 1}, {1, 0}, secret(13));
+    if (!surplus_proof || !hta::verify_authorization(*roster, generator_context, 1, message,
+                                                     signature->masked_key, *surplus_proof))
+        return EXIT_FAILURE;
+    auto tampered_proof = *proof;
+    tampered_proof.mu.back() ^= 1;
+    auto bad_linkage = *proof;
+    bad_linkage.Qs.back() ^= 1;
+    auto bad_inner_product = *proof;
+    bad_inner_product.t_hat.back() ^= 1;
+    if (hta::verify_authorization(*roster, generator_context, 2, message,
+                                  signature->masked_key, tampered_proof) ||
+        hta::verify_authorization(*roster, generator_context, 2, message,
+                                  signature->masked_key, bad_linkage) ||
+        hta::verify_authorization(*roster, generator_context, 2, message,
+                                  signature->masked_key, bad_inner_product) ||
+        hta::verify_signature(*roster, generator_context, 2, {'x'}, final_signature) ||
+        hta::prove_authorization(*roster, generator_context, 2, message,
+                                 signature->masked_key, {1, 0}, {0, 0}, secret(13)))
         return EXIT_FAILURE;
 
     auto missing_commitments =

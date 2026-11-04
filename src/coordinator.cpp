@@ -148,7 +148,7 @@ std::optional<AggregateCommitments> CoordinatorSession::collect_commitments(
     const auto signature_input = transcript(
         "SIG", {frame(2, digest_), point_field(masked_key_), frame_integer(threshold_),
                 point_field(*nonce), frame(2, message_)});
-    challenge_ = scalar_challenge(signature_input, true);
+    challenge_ = scalar_challenge(signature_input, false);
     nonce_ = *nonce;
     state_ = State::collecting_responses;
     return AggregateCommitments{std::move(first), std::move(second)};
