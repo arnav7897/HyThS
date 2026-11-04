@@ -13,4 +13,6 @@ SecretScalar secret_scalar_multiply(const SecretScalar &left, const SecretScalar
 std::vector<std::uint8_t> secret_generator_multiply(const SecretScalar &scalar);
 std::vector<std::uint8_t> secret_point_multiply(const std::vector<std::uint8_t> &point,
                                                 const SecretScalar &scalar);
+std::vector<std::uint8_t> secret_msm(const std::vector<std::vector<std::uint8_t>> &points,
+                                     const std::vector<SecretScalar> &scalars);
 } // namespace hta

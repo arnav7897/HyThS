@@ -114,4 +114,23 @@ std::vector<std::uint8_t> secret_point_multiply(const std::vector<std::uint8_t> 
                                                 const SecretScalar &scalar) {
     return multiply(point, scalar);
 }
+
+std::vector<std::uint8_t> secret_msm(const std::vector<std::vector<std::uint8_t>> &points,
+                                     const std::vector<SecretScalar> &scalars) {
+    if (points.size() != scalars.size())
+        throw std::invalid_argument("secret MSM input lengths differ");
+    initialize();
+    if (points.empty())
+        return {0};
+    std::vector<mcl::G1> decoded_points(points.size());
+    std::vector<mcl::Fr> decoded_scalars(scalars.size());
+    for (std::size_t i = 0; i < points.size(); ++i) {
+        if (!decode_public_point(points[i], decoded_points[i]) ||
+            !decode_secret(scalars[i], decoded_scalars[i]))
+            throw std::invalid_argument("invalid secret MSM input");
+    }
+    mcl::G1 result;
+    mcl::G1::mulVec(result, decoded_points.data(), decoded_scalars.data(), points.size());
+    return encode_public_point(result);
+}
 } // namespace hta

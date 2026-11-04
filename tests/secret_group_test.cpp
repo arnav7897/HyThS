@@ -6,6 +6,7 @@
 #include <array>
 #include <cstdlib>
 #include <cstdint>
+#include <stdexcept>
 #include <vector>
 
 static hta::SecretScalar scalar(std::uint8_t value) {
@@ -42,6 +43,20 @@ int main() {
     if (!public_fixed || !public_variable || secret_fixed != *public_fixed ||
         secret_variable != *public_variable)
         return EXIT_FAILURE;
+
+    const std::vector<hta::PublicBytes> msm_points{*generator, *public_fixed};
+    std::vector<hta::SecretScalar> msm_scalars;
+    msm_scalars.push_back(scalar(2));
+    msm_scalars.push_back(scalar(3));
+    const auto secret_msm = hta::secret_msm(msm_points, msm_scalars);
+    const auto public_msm = hta::public_msm(msm_points, {bytes(two), bytes(three)});
+    if (!public_msm || secret_msm != *public_msm || hta::secret_msm({}, {}) != hta::PublicBytes{0})
+        return EXIT_FAILURE;
+    try {
+        (void)hta::secret_msm({*generator}, {});
+        return EXIT_FAILURE;
+    } catch (const std::invalid_argument &) {
+    }
 
     constexpr std::array<std::uint8_t, 32> order_minus_one = {
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
