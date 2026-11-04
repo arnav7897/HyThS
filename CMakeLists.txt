@@ -193,6 +193,10 @@ add_test(NAME phase3_kat
 add_executable(phase3_completeness tools/phase3_completeness.cpp)
 target_link_libraries(phase3_completeness PRIVATE hta_protocol_encoding)
 
+add_executable(phase4_fault_injector tools/phase4_fault_injector.cpp)
+target_link_libraries(phase4_fault_injector PRIVATE hta_protocol_encoding)
+add_test(NAME phase4_fault_injector_smoke COMMAND phase4_fault_injector 1)
+
 if(HTA_INSTRUMENTATION STREQUAL "fuzz")
   add_executable(protocol_fuzz fuzz/protocol_fuzz.cpp)
   target_link_libraries(protocol_fuzz PRIVATE hta_protocol_encoding)
