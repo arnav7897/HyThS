@@ -94,3 +94,10 @@ target_link_libraries(hta_hash_to_curve PRIVATE hta_hash_to_field OpenSSL::Crypt
 add_executable(hash_to_curve_test tests/hash_to_curve_test.cpp)
 target_link_libraries(hash_to_curve_test PRIVATE hta_hash_to_curve)
 add_test(NAME hash_to_curve COMMAND hash_to_curve_test)
+
+option(HTA_BUILD_BENCH "Build primitive microbenchmarks" OFF)
+if(HTA_BUILD_BENCH)
+  add_executable(primitive_bench bench/primitive_bench.cpp)
+  target_link_libraries(primitive_bench PRIVATE hta_secp256k1_public hta_scalar_challenge
+                                                 hta_hash_to_curve)
+endif()

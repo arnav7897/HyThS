@@ -9,7 +9,7 @@
     { "name": "tsan", "inherits": "debug", "cacheVariables": { "HTA_INSTRUMENTATION": "tsan" } },
     { "name": "coverage", "inherits": "debug", "cacheVariables": { "HTA_INSTRUMENTATION": "coverage" } },
     { "name": "fuzz", "inherits": "debug", "cacheVariables": { "CMAKE_CXX_COMPILER": "clang++", "HTA_INSTRUMENTATION": "fuzz" } },
-    { "name": "bench", "inherits": "release" }
+    { "name": "bench", "inherits": "release", "cacheVariables": { "HTA_BUILD_BENCH": "ON" } }
   ],
   "buildPresets": [
     { "name": "debug", "configurePreset": "debug" },
