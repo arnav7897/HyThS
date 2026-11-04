@@ -55,10 +55,12 @@ PublicBytes make_context(const PublicBytes &sid, const PublicBytes &digest, std:
 }
 } // namespace
 
-Signer::Signer(std::uint64_t index, SecretScalar secret_key)
-    : index_(index), secret_key_(std::move(secret_key)) {
+Signer::Signer(std::uint64_t index, SecretScalar secret_key, std::size_t max_used_sessions)
+    : index_(index), secret_key_(std::move(secret_key)), max_used_sessions_(max_used_sessions) {
     if (index_ == 0 || !secret_key_.valid())
         throw std::invalid_argument("invalid signer key");
+    if (max_used_sessions_ == 0 || max_used_sessions_ > maximum_remembered_sessions)
+        throw std::invalid_argument("invalid signer replay capacity");
 }
 
 std::optional<RoundOneCommitments> Signer::round1(const Roster &roster, const PublicBytes &sid,
@@ -81,8 +83,10 @@ std::optional<RoundOneCommitments> Signer::round1(const Roster &roster, const Pu
         return std::nullopt;
 
     std::lock_guard<std::mutex> lock(mutex_);
-    if (!used_sessions_.insert(sid).second)
+    if (used_sessions_.find(sid) != used_sessions_.end() ||
+        used_sessions_.size() >= max_used_sessions_)
         return std::nullopt;
+    used_sessions_.insert(sid);
     try {
         auto first_nonce = random_secret_scalar();
         auto second_nonce = random_secret_scalar();
