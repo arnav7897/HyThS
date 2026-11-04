@@ -1,5 +1,6 @@
 #include "hta/coordinator.hpp"
 #include "hta/authorization.hpp"
+#include "hta/protocol_encoding.hpp"
 #include "hta/signer.hpp"
 
 #include <array>
@@ -56,6 +57,56 @@ int main() {
         return EXIT_FAILURE;
     const hta::FinalSignature final_signature{*signature, *proof};
     if (!hta::verify_signature(*roster, generator_context, 2, message, final_signature))
+        return EXIT_FAILURE;
+    const auto encoded_signature = hta::encode_signature(final_signature, 2);
+    const auto decoded_signature = encoded_signature
+                                      ? hta::decode_signature(*encoded_signature, 2)
+                                      : std::nullopt;
+    if (!encoded_signature || !decoded_signature ||
+        !hta::verify_signature(*roster, generator_context, 2, message, *decoded_signature))
+        return EXIT_FAILURE;
+    auto trailing_bytes = *encoded_signature;
+    trailing_bytes.push_back(0);
+    const auto encoded_proof = hta::encode_authorization_proof(*proof, 2);
+    if (hta::decode_signature(trailing_bytes, 2) ||
+        hta::encode_authorization_proof(*proof, 1) ||
+        !encoded_proof || !hta::decode_authorization_proof(*encoded_proof, 2))
+        return EXIT_FAILURE;
+
+    const hta::PublicBytes digest(roster->digest.begin(), roster->digest.end());
+    const hta::RoundOneRequest request{1, sid, digest, 2, message, masked_key, {1, 2}};
+    const auto encoded_request = hta::encode_round_one_request(request);
+    const auto decoded_request = encoded_request
+                                     ? hta::decode_round_one_request(*encoded_request, 2)
+                                     : std::nullopt;
+    auto bad_request = encoded_request.value_or(hta::PublicBytes{});
+    bad_request.push_back(0);
+    const hta::RoundOneResponse round_one_response{1, sid, *first};
+    const auto encoded_round_one_response = hta::encode_round_one_response(round_one_response);
+    const auto decoded_round_one_response = encoded_round_one_response
+                                                ? hta::decode_round_one_response(
+                                                      *encoded_round_one_response)
+                                                : std::nullopt;
+    const hta::RoundTwoRequest round_two_request{1, sid, *aggregate};
+    const auto encoded_round_two_request = hta::encode_round_two_request(round_two_request);
+    const auto decoded_round_two_request = encoded_round_two_request
+                                              ? hta::decode_round_two_request(
+                                                    *encoded_round_two_request)
+                                              : std::nullopt;
+    const hta::RoundTwoResponse round_two_response{1, sid, *response1};
+    const auto encoded_round_two_response = hta::encode_round_two_response(round_two_response);
+    const auto decoded_round_two_response = encoded_round_two_response
+                                                ? hta::decode_round_two_response(
+                                                      *encoded_round_two_response)
+                                                : std::nullopt;
+    const auto encoded_registration = hta::encode_registration(registration1);
+    const auto decoded_registration = encoded_registration
+                                          ? hta::decode_registration(*encoded_registration)
+                                          : std::nullopt;
+    if (!decoded_request || decoded_request->subset != request.subset ||
+        hta::decode_round_one_request(bad_request, 2) ||
+        !decoded_round_one_response || !decoded_round_two_request || !decoded_round_two_response ||
+        !decoded_registration || decoded_registration->index != registration1.index)
         return EXIT_FAILURE;
     const auto surplus_proof = hta::prove_authorization(
         *roster, generator_context, 1, message, signature->masked_key, {1, 1}, {1, 0}, secret(13));
