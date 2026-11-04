@@ -5,6 +5,7 @@ Phase 2 is in progress through feature branches. The audit v5 PDF and `suite-dra
 ## Current evidence
 
 - [x] RFC 9380 SHA-256 `expand_message_xmd`: published short- and long-DST vectors, multi-block output, and length boundaries. Pushed in `2e38ba4`.
+- [x] Public secp256k1 hash-to-field: RFC 9380 J.8.1 intermediate field-element vectors for empty and `abc` messages, length boundaries, and domain separation. This is not full hash-to-curve.
 - [ ] Suite scalar-challenge hashing: implementation and one example are in `2da0ee2`; force and check rejection, nonzero, and counter-exhaustion paths before completion.
 - [ ] Review and pin all cryptographic dependencies. The research mcl revision and source hash are pinned; OpenSSL is selected by version range, and backend platform and timing evidence remain incomplete.
 - [ ] Research public-input secp256k1 adapter: mcl revision and source hash are pinned in CMake. Known G and 2G, identity, malformed inputs, scalar boundaries, and public MSM are tested. Cross-platform and broader independent checks remain; secret inputs and concurrent mixed mcl curves are unsupported.
