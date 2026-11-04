@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <functional>
+#include <vector>
 
 namespace hta {
 class SecretScalar;
@@ -21,13 +22,19 @@ class SecretScalar final {
     ~SecretScalar();
 
     const std::array<std::uint8_t, 32> &bytes() const noexcept { return bytes_; }
-    bool valid() const noexcept;
+    bool valid(bool require_nonzero = true) const noexcept;
 
   private:
     explicit SecretScalar(const std::array<std::uint8_t, 32> &bytes) noexcept;
     std::array<std::uint8_t, 32> bytes_{};
     friend SecretScalar random_secret_scalar();
     friend SecretScalar testing::random_secret_scalar_with_rng(const testing::RandomBytes &);
+    friend SecretScalar secret_scalar_add(const SecretScalar &, const SecretScalar &);
+    friend SecretScalar secret_scalar_multiply(const SecretScalar &, const SecretScalar &);
+    friend std::vector<std::uint8_t> secret_generator_multiply(const SecretScalar &);
+    friend std::vector<std::uint8_t> secret_point_multiply(const std::vector<std::uint8_t> &,
+                                                           const SecretScalar &);
+    bool initialized_ = true;
 };
 
 // Uniformly samples a nonzero scalar modulo secp256k1 order using OpenSSL's private RNG.

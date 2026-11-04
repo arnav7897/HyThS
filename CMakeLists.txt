@@ -127,6 +127,15 @@ add_executable(secret_scalar_test tests/secret_scalar_test.cpp)
 target_link_libraries(secret_scalar_test PRIVATE hta_secret_scalar)
 add_test(NAME secret_scalar COMMAND secret_scalar_test)
 
+add_library(hta_secret_group src/secret_group.cpp)
+target_include_directories(hta_secret_group PUBLIC include)
+target_compile_features(hta_secret_group PUBLIC cxx_std_17)
+target_link_libraries(hta_secret_group PRIVATE hta_secret_scalar hta_secp256k1_public mcl::mcl_st
+                                               OpenSSL::Crypto)
+add_executable(secret_group_test tests/secret_group_test.cpp)
+target_link_libraries(secret_group_test PRIVATE hta_secret_group hta_secp256k1_public)
+add_test(NAME secret_group COMMAND secret_group_test)
+
 option(HTA_BUILD_BENCH "Build primitive microbenchmarks" OFF)
 if(HTA_BUILD_BENCH)
   add_executable(primitive_bench bench/primitive_bench.cpp)

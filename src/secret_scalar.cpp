@@ -53,22 +53,28 @@ template <typename RandomBytes> std::array<std::uint8_t, 32> sample(RandomBytes 
 
 SecretScalar::SecretScalar(const std::array<std::uint8_t, 32> &bytes) noexcept : bytes_(bytes) {}
 
-SecretScalar::SecretScalar(SecretScalar &&other) noexcept : bytes_(other.bytes_) {
+SecretScalar::SecretScalar(SecretScalar &&other) noexcept
+    : bytes_(other.bytes_), initialized_(other.initialized_) {
     OPENSSL_cleanse(other.bytes_.data(), other.bytes_.size());
+    other.initialized_ = false;
 }
 
 SecretScalar &SecretScalar::operator=(SecretScalar &&other) noexcept {
     if (this != &other) {
         OPENSSL_cleanse(bytes_.data(), bytes_.size());
         bytes_ = other.bytes_;
+        initialized_ = other.initialized_;
         OPENSSL_cleanse(other.bytes_.data(), other.bytes_.size());
+        other.initialized_ = false;
     }
     return *this;
 }
 
 SecretScalar::~SecretScalar() { OPENSSL_cleanse(bytes_.data(), bytes_.size()); }
 
-bool SecretScalar::valid() const noexcept { return nonzero(bytes_) && less_than_order(bytes_); }
+bool SecretScalar::valid(bool require_nonzero) const noexcept {
+    return initialized_ && less_than_order(bytes_) && (!require_nonzero || nonzero(bytes_));
+}
 
 SecretScalar random_secret_scalar() {
     auto candidate =
