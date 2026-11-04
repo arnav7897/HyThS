@@ -12,6 +12,7 @@ Phase 2 is in progress through feature branches. The audit v5 PDF and `suite-dra
 - [ ] Review and pin all cryptographic dependencies. The research mcl revision and source hash are pinned; OpenSSL is selected by version range, and backend platform and timing evidence remain incomplete.
 - [ ] Research public-input secp256k1 adapter: mcl revision and source hash are pinned in CMake. Known G and 2G, identity, malformed inputs, scalar boundaries, and public MSM are tested. Cross-platform and broader independent checks remain; secret inputs and concurrent mixed mcl curves are unsupported.
 - [x] Secret scalar sampling prototype: OpenSSL `RAND_priv_bytes`, rejection of zero/out-of-range candidates, move-only wrapper, and best-effort `OPENSSL_cleanse` on destruction and moves. NIST CTR_DRBG KAT, forced rejection/RNG failure tests, and secret arithmetic remain open.
+- [x] Optional high-level operation counters: count successful scalar add/multiply, point add/multiply, generator-multiply, and MSM calls/bases. Enabled and disabled tests check counts; they do not track internal field operations.
 
 ## Build in dependency order
 
@@ -20,7 +21,7 @@ Phase 2 is in progress through feature branches. The audit v5 PDF and `suite-dra
 - [ ] **Generator derivation:** Implement typed, context-bound generator derivation and the protocol's identity retry. Add independently generated vectors for DST, generator context, and indices. Hash-to-curve alone does not finish generator derivation.
 - [ ] **Randomness and secrets:** Finish RNG failure and forced rejection tests; add planned deterministic CTR_DRBG vectors. Current sampler uses rejection sampling over 32-byte RNG output. Nonce persistence and one-use session lifecycle belong to the later signer implementation.
 - [ ] **BLS12-381 and pairing primitives:** Implement and test the planned backend support, subgroup validation, identity handling, and multi-pairing needed for comparison work. Do not imply the first secp256k1 suite needs pairings.
-- [ ] **Operation counters:** Instrument the selected backend and test representative counts with instrumentation enabled and disabled.
+- [x] **Operation counters:** Instrument selected secp256k1 adapter API calls; `opcounts` preset tests enabled counters; default preset confirms disabled counters report zero. Internal backend work is not counted.
 - [ ] **E1 microbenchmarks:** Implement and save reproducible raw measurements for the roadmap's fixed/variable multiplication, MSM sizes, pairing, hash-to-curve, hash-to-scalar, and NTT. Record commit, dependencies, hardware, compiler, timing method, repetitions, and constant-time or variable-time caveats. Follow the roadmap's specification and correctness gates before publishing results.
 
 ## Exit check

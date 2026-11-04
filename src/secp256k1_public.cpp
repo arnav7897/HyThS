@@ -1,9 +1,11 @@
 #include "hta/secp256k1_public.hpp"
+#include "hta/operation_counters.hpp"
 
 #include "hta/framing.hpp"
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <mutex>
 #include <stdexcept>
 
@@ -11,6 +13,17 @@
 
 namespace hta {
 namespace {
+#ifdef HTA_OPCOUNTERS
+struct AtomicCounters {
+    std::atomic<std::uint64_t> scalar_add{0}, scalar_multiply{0}, point_add{0};
+    std::atomic<std::uint64_t> variable_multiply{0}, generator_multiply{0}, msm{0}, msm_bases{0};
+};
+AtomicCounters counters;
+#define HTA_INCREMENT(name, amount) counters.name.fetch_add((amount), std::memory_order_relaxed)
+#else
+#define HTA_INCREMENT(name, amount) ((void)0)
+#endif
+
 void initialize() {
     static std::once_flag once;
     std::call_once(once, [] { mcl::initCurve<mcl::G1>(MCL_SECP256K1); });
@@ -56,7 +69,49 @@ bool decode_point(const PublicBytes &bytes, bool allow_identity, mcl::G1 &out) {
     return out.deserialize(little.data(), little.size()) == little.size() && !out.isZero() &&
            out.isValid() && encode_point(out) == bytes;
 }
+
+std::optional<PublicBytes> multiply_encoded_point(const PublicBytes &point,
+                                                  const PublicBytes &scalar, bool generator) {
+    initialize();
+    mcl::G1 p, result;
+    mcl::Fr s;
+    if (!decode_point(point, true, p) || !decode_scalar(scalar, s))
+        return std::nullopt;
+    if (generator)
+        HTA_INCREMENT(generator_multiply, 1);
+    else
+        HTA_INCREMENT(variable_multiply, 1);
+    mcl::G1::mul(result, p, s);
+    return encode_point(result);
+}
 } // namespace
+
+void reset_operation_counters() noexcept {
+#ifdef HTA_OPCOUNTERS
+    counters.scalar_add.store(0, std::memory_order_relaxed);
+    counters.scalar_multiply.store(0, std::memory_order_relaxed);
+    counters.point_add.store(0, std::memory_order_relaxed);
+    counters.variable_multiply.store(0, std::memory_order_relaxed);
+    counters.generator_multiply.store(0, std::memory_order_relaxed);
+    counters.msm.store(0, std::memory_order_relaxed);
+    counters.msm_bases.store(0, std::memory_order_relaxed);
+#endif
+}
+
+OperationCounters operation_counters_snapshot() noexcept {
+    OperationCounters result;
+#ifdef HTA_OPCOUNTERS
+    result.scalar_add_calls = counters.scalar_add.load(std::memory_order_relaxed);
+    result.scalar_multiply_calls = counters.scalar_multiply.load(std::memory_order_relaxed);
+    result.point_add_calls = counters.point_add.load(std::memory_order_relaxed);
+    result.variable_point_multiply_calls =
+        counters.variable_multiply.load(std::memory_order_relaxed);
+    result.generator_multiply_calls = counters.generator_multiply.load(std::memory_order_relaxed);
+    result.msm_calls = counters.msm.load(std::memory_order_relaxed);
+    result.msm_bases = counters.msm_bases.load(std::memory_order_relaxed);
+#endif
+    return result;
+}
 
 bool valid_public_scalar(const PublicBytes &encoded) noexcept {
     return is_canonical_scalar(encoded);
@@ -73,6 +128,7 @@ std::optional<PublicBytes> public_scalar_add(const PublicBytes &left, const Publ
     mcl::Fr a, b, result;
     if (!decode_scalar(left, a) || !decode_scalar(right, b))
         return std::nullopt;
+    HTA_INCREMENT(scalar_add, 1);
     mcl::Fr::add(result, a, b);
     return encode_scalar(result);
 }
@@ -83,6 +139,7 @@ std::optional<PublicBytes> public_scalar_multiply(const PublicBytes &left,
     mcl::Fr a, b, result;
     if (!decode_scalar(left, a) || !decode_scalar(right, b))
         return std::nullopt;
+    HTA_INCREMENT(scalar_multiply, 1);
     mcl::Fr::mul(result, a, b);
     return encode_scalar(result);
 }
@@ -92,19 +149,14 @@ std::optional<PublicBytes> public_point_add(const PublicBytes &left, const Publi
     mcl::G1 a, b, result;
     if (!decode_point(left, true, a) || !decode_point(right, true, b))
         return std::nullopt;
+    HTA_INCREMENT(point_add, 1);
     mcl::G1::add(result, a, b);
     return encode_point(result);
 }
 
 std::optional<PublicBytes> public_point_multiply(const PublicBytes &point,
                                                  const PublicBytes &scalar) {
-    initialize();
-    mcl::G1 p, result;
-    mcl::Fr s;
-    if (!decode_point(point, true, p) || !decode_scalar(scalar, s))
-        return std::nullopt;
-    mcl::G1::mul(result, p, s);
-    return encode_point(result);
+    return multiply_encoded_point(point, scalar, false);
 }
 
 std::optional<PublicBytes> public_generator_multiply(const PublicBytes &scalar) {
@@ -112,7 +164,7 @@ std::optional<PublicBytes> public_generator_multiply(const PublicBytes &scalar) 
                                        0x55, 0xa0, 0x62, 0x95, 0xce, 0x87, 0x0b, 0x07, 0x02,
                                        0x9b, 0xfc, 0xdb, 0x2d, 0xce, 0x28, 0xd9, 0x59, 0xf2,
                                        0x81, 0x5b, 0x16, 0xf8, 0x17, 0x98};
-    return public_point_multiply(generator, scalar);
+    return multiply_encoded_point(generator, scalar, true);
 }
 
 std::optional<PublicBytes> public_msm(const std::vector<PublicBytes> &points,
@@ -129,6 +181,8 @@ std::optional<PublicBytes> public_msm(const std::vector<PublicBytes> &points,
             !decode_scalar(scalars[i], decoded_scalars[i]))
             return std::nullopt;
     }
+    HTA_INCREMENT(msm, 1);
+    HTA_INCREMENT(msm_bases, points.size());
     mcl::G1 result;
     mcl::G1::mulVec(result, decoded_points.data(), decoded_scalars.data(), points.size());
     return encode_point(result);
