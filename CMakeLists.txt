@@ -177,6 +177,22 @@ target_compile_definitions(protocol_encoding_test PRIVATE
 target_link_libraries(protocol_encoding_test PRIVATE hta_protocol_encoding)
 add_test(NAME protocol_encoding COMMAND protocol_encoding_test)
 
+add_executable(authorization_simulator_test tests/authorization_simulator_test.cpp)
+target_include_directories(authorization_simulator_test PRIVATE src)
+target_link_libraries(authorization_simulator_test PRIVATE hta_authorization OpenSSL::Crypto)
+add_test(NAME authorization_simulator COMMAND authorization_simulator_test)
+
+add_executable(phase3_kat_generator tools/phase3_kat_generator.cpp)
+target_include_directories(phase3_kat_generator PRIVATE src)
+target_link_libraries(phase3_kat_generator PRIVATE hta_protocol_encoding hta_secret_scalar
+                                                  hta_secret_group OpenSSL::Crypto)
+add_test(NAME phase3_kat
+         COMMAND phase3_kat_generator ${CMAKE_CURRENT_SOURCE_DIR}/tests/kats/phase3-basic.req
+                 --check ${CMAKE_CURRENT_SOURCE_DIR}/tests/kats/phase3-basic.rsp)
+
+add_executable(phase3_completeness tools/phase3_completeness.cpp)
+target_link_libraries(phase3_completeness PRIVATE hta_protocol_encoding)
+
 option(HTA_BUILD_BENCH "Build primitive microbenchmarks" OFF)
 if(HTA_BUILD_BENCH)
   add_executable(primitive_bench bench/primitive_bench.cpp)

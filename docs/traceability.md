@@ -1,6 +1,6 @@
 # Audit v5 implementation traceability
 
-Status: specification work; no protocol implementation or independently validated vectors exist. Section, equation, and algorithm references are to `Threshold_Schnorr_Integrated_Proof_Audit_v5.pdf` (SHA-256 `271ee56591f8f960f92bd317bf77a1045e254d5b1488cf47f91f2e0b960d8cb8`).
+Status: Phase 3 research prototype implementation and selected test evidence are present. This matrix does not claim security, external cryptographic review, or production readiness. Section, equation, and algorithm references are to `Threshold_Schnorr_Integrated_Proof_Audit_v5.pdf` (SHA-256 `271ee56591f8f960f92bd317bf77a1045e254d5b1488cf47f91f2e0b960d8cb8`).
 
 | Audit reference | Required behavior | Implementation and test status |
 | --- | --- | --- |
@@ -8,11 +8,12 @@ Status: specification work; no protocol implementation or independently validate
 | Definition 2.1, (3) | Derive exactly 2N+1 nonidentity generators in the specified order from suite, context, N, and index. | RFC 9380 vectors pass. Typed context/N/index-bound `GEN` derivation and retry transcript are implemented; independent generator vectors and forced identity-retry test remain pending. Caller-authenticated context is an external requirement. |
 | Assumption 3.1, (4) | Ordered distinct nonidentity roster; ideal extractable registration in proofs. PoP is a heuristic practical proposal. | Ordered duplicate-free roster, typed roster digest, and Schnorr PoP verify audit §3 equation (4) using the frozen suite challenge. Practical PoP does not establish ideal extraction. |
 | (5)–(7) | Bind ordered roster, threshold, message, subset and masked key into the specified contexts. Resample identity masked keys. | Suite scalar-challenge rejection sampling has an example test; full context construction, rejection-path testing and protocol checks remain pending. |
-| Algorithm 1, (8)–(10) | Reject reused session IDs and invalid inputs; maintain immutable context and erase one-use nonces on completion or abort; verify Schnorr equation. | Toy additive-group test exercises the signing equation; state persistence and real implementation tests pending. |
-| (11)–(17), Algorithm 2 | Construct exact integer threshold witness and linked masked key; generate authorization proof. | Implementation and vectors pending. |
-| (18)–(20), checks C1–C4 | Verify all four authorization equations and Schnorr equation with canonical group checks. | Toy additive-group test exercises authorization algebra across thresholds; real verifier, transcripts and negative tests pending. |
-| Proposition 5.1, (21)–(22) | Honest completeness, including masked signing equation and constant polynomial term. | Toy algebra checks only; real-group completeness tests pending. |
-| Lemma 7.3, (31)–(35) | Simulator operates with programmable random oracles, conditioned on no prior-query conflict. | Test-only oracle interface, simulator and conflict tests pending. |
+| Algorithm 1, (8)–(10) | Reject reused session IDs and invalid inputs; maintain immutable context and erase one-use nonces on completion or abort; verify Schnorr equation. | `src/signer.cpp`, `src/coordinator.cpp`; `tests/signer_test.cpp` covers replay, abort burn, valid shares, bad share, and final verification. Replay state is process-local and retained for the process lifetime. |
+| S7 optional partial-share check | Detect an invalid signer response before aggregation. | `CoordinatorSession::verify_partial_response` checks the response against the session's stored commitments and roster key; valid and modified responses are tested. |
+| (11)–(17), Algorithm 2 | Construct exact integer threshold witness and linked masked key; generate authorization proof. | `src/authorization.cpp`; end-to-end tests and deterministic protocol KAT. Variable-time research implementation. |
+| (18)–(20), checks C1–C4 | Verify all four authorization equations and Schnorr equation with canonical group checks. | `src/authorization.cpp`; tests cover valid proof, altered fields, wrong message, malformed encodings, and protocol KAT. |
+| Proposition 5.1, (21)–(22) | Honest completeness, including masked signing equation and constant polynomial term. | 10,000 full protocol trials pass for each of `(n,t)=(1,1),(2,1),(2,2),(3,2)`; see `docs/benchmarks/phase3-completeness.txt`. |
+| Lemma 7.3, (31)–(35) | Simulator operates with programmable random oracles, conditioned on no prior-query conflict. | `tests/authorization_simulator_test.cpp` constructs a witness-free proof from (32)–(35), verifies C1–C4 through a private challenge hook, and rejects a prior-query conflict at each of Hy, Hz, and Hx. Fixed algebraic inputs test equations and conflict handling; they do not test the simulator's distribution or validate the lemma. |
 | Algorithm 3; Definitions 2.2, 6.1, 7.1, 8.1, 8.3; §§6–8 | Security experiments and reductions, not deployed protocol operations. | Independent mathematical review pending; do not infer proof validity from tests. |
 | §9 | Preserve proof model and scope limitations in all security claims. | Independent review pending. |
 

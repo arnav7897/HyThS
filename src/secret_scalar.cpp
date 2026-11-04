@@ -1,15 +1,18 @@
 #include "hta/secret_scalar.hpp"
+#include "secret_scalar_test.hpp"
 
 #include "hta/framing.hpp"
 
 #include <algorithm>
 #include <stdexcept>
+#include <utility>
 
 #include <openssl/crypto.h>
 #include <openssl/rand.h>
 
 namespace hta {
 namespace {
+thread_local const testing::RandomBytes *testing_random_bytes = nullptr;
 constexpr std::array<std::uint8_t, 32> order = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe,
     0xba, 0xae, 0xdc, 0xe6, 0xaf, 0x48, 0xa0, 0x3b, 0xbf, 0xd2, 0x5e, 0x8c, 0xd0, 0x36, 0x41, 0x41};
@@ -87,16 +90,24 @@ SecretScalar SecretScalar::from_canonical(const std::array<std::uint8_t, 32> &by
 }
 
 SecretScalar random_secret_scalar() {
-    auto candidate = sample(
-        [](std::uint8_t *output, int length) { return RAND_priv_bytes(output, length); }, true);
+    auto candidate = testing_random_bytes
+                        ? sample(*testing_random_bytes, true)
+                        : sample([](std::uint8_t *output, int length) {
+                              return RAND_priv_bytes(output, length);
+                          },
+                          true);
     SecretScalar result(candidate);
     OPENSSL_cleanse(candidate.data(), candidate.size());
     return result;
 }
 
 SecretScalar random_secret_scalar_allow_zero() {
-    auto candidate = sample(
-        [](std::uint8_t *output, int length) { return RAND_priv_bytes(output, length); }, false);
+    auto candidate = testing_random_bytes
+                        ? sample(*testing_random_bytes, false)
+                        : sample([](std::uint8_t *output, int length) {
+                              return RAND_priv_bytes(output, length);
+                          },
+                          false);
     SecretScalar result(candidate);
     OPENSSL_cleanse(candidate.data(), candidate.size());
     return result;
@@ -115,4 +126,13 @@ SecretScalar testing::random_secret_scalar_allow_zero_with_rng(const RandomBytes
     OPENSSL_cleanse(candidate.data(), candidate.size());
     return result;
 }
+
+testing::ScopedRandomBytes::ScopedRandomBytes(RandomBytes random_bytes)
+    : random_bytes_(std::move(random_bytes)), previous_(testing_random_bytes) {
+    if (!random_bytes_)
+        throw std::invalid_argument("test random source is empty");
+    testing_random_bytes = &random_bytes_;
+}
+
+testing::ScopedRandomBytes::~ScopedRandomBytes() { testing_random_bytes = previous_; }
 } // namespace hta

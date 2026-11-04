@@ -1,0 +1,19 @@
+Phase 3 randomized end-to-end completeness evidence
+Date: 2026-11-04
+Command: ./build/release/phase3_completeness 10000
+Build: CMake release preset, GCC 13.3.0, OpenSSL 3.0.13
+Host: Linux x86_64, Ubuntu 24.04 kernel 7.0.0-38-generic
+Runtime: 323.40 seconds for all four sets
+
+Each run created fresh signing sessions and fresh nonce/proof randomness, then
+verified every response share, the complete signature, and the authorization
+proof. The same roster was used within each parameter set. Subset sizes alternate
+between t and n.
+
+n=1 threshold=1 runs=10000 subset_sizes=1,1 PASS
+n=2 threshold=1 runs=10000 subset_sizes=1,2 PASS
+n=2 threshold=2 runs=10000 subset_sizes=2,2 PASS
+n=3 threshold=2 runs=10000 subset_sizes=2,3 PASS
+
+These runs are implementation evidence for sampled executions, not a proof of
+security, correctness for all inputs, or independent mathematical review.

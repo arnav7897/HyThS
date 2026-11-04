@@ -1,4 +1,5 @@
 #include "hta/authorization.hpp"
+#include "authorization_test.hpp"
 
 #include "hta/framing.hpp"
 #include "hta/generator_derivation.hpp"
@@ -400,9 +401,12 @@ prove_authorization(const Roster &roster, const PublicBytes &generator_context,
     }
 }
 
-bool verify_authorization(const Roster &roster, const PublicBytes &generator_context,
-                          std::uint32_t threshold, const PublicBytes &message,
-                          const PublicBytes &masked_key, const AuthorizationProof &proof) {
+namespace {
+template <typename ChallengeProvider>
+bool verify_authorization_impl(const Roster &roster, const PublicBytes &generator_context,
+                               std::uint32_t threshold, const PublicBytes &message,
+                               const PublicBytes &masked_key, const AuthorizationProof &proof,
+                               const ChallengeProvider &challenge_provider) {
     const auto params = validate_public(roster, generator_context, threshold, message, masked_key);
     if (!params || !valid_public_point(proof.A, true) || !valid_public_point(proof.S, true) ||
         !valid_public_point(proof.Qs, true) || !valid_public_point(proof.T1, true) ||
@@ -421,11 +425,12 @@ bool verify_authorization(const Roster &roster, const PublicBytes &generator_con
             statement(params->digest, static_cast<std::uint32_t>(roster.public_keys.size()),
                       threshold, message, masked_key);
         const auto T0 = proof_prefix(st, proof);
-        const auto y = public_challenge(transcript("Y", {frame(2, T0)}), true);
-        const auto z = public_challenge(transcript("Z", {frame(2, T0), frame(5, y)}), true);
-        const auto x = public_challenge(transcript("X", {frame(2, T0), frame(5, y), frame(5, z),
-                                                         frame(4, proof.T1), frame(4, proof.T2)}),
-                                        true);
+        const auto y = challenge_provider(transcript("Y", {frame(2, T0)}), true);
+        const auto z = challenge_provider(transcript("Z", {frame(2, T0), frame(5, y)}), true);
+        const auto x = challenge_provider(
+            transcript("X", {frame(2, T0), frame(5, y), frame(5, z), frame(4, proof.T1),
+                              frame(4, proof.T2)}),
+            true);
         const auto y_values = powers(y, params->dims.N);
         const auto chi_w = public_chi_w(roster.public_keys.size(), params->dims);
 
@@ -483,6 +488,29 @@ bool verify_authorization(const Roster &roster, const PublicBytes &generator_con
         const auto left_c4 = public_msm({base_point, gens.H0}, {proof.t_hat, proof.tau_x});
         const auto right_c4 = public_msm({base_point, proof.T1, proof.T2}, {theta, x, x2});
         return left_c4 && right_c4 && *left_c4 == *right_c4;
+    } catch (...) {
+        return false;
+    }
+}
+} // namespace
+
+bool verify_authorization(const Roster &roster, const PublicBytes &generator_context,
+                          std::uint32_t threshold, const PublicBytes &message,
+                          const PublicBytes &masked_key, const AuthorizationProof &proof) {
+    return verify_authorization_impl(
+        roster, generator_context, threshold, message, masked_key, proof,
+        [](const PublicBytes &input, bool nonzero) { return public_challenge(input, nonzero); });
+}
+
+bool testing::verify_authorization_with_challenges(
+    const Roster &roster, const PublicBytes &generator_context, std::uint32_t threshold,
+    const PublicBytes &message, const PublicBytes &masked_key, const AuthorizationProof &proof,
+    const ChallengeProvider &challenge) {
+    if (!challenge)
+        return false;
+    try {
+        return verify_authorization_impl(roster, generator_context, threshold, message, masked_key,
+                                         proof, challenge);
     } catch (...) {
         return false;
     }
