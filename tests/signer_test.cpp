@@ -65,6 +65,30 @@ int main() {
     const hta::FinalSignature final_signature{*signature, *proof};
     if (!hta::verify_signature(*roster, generator_context, 2, message, final_signature))
         return EXIT_FAILURE;
+    const std::vector<hta::FinalSignature> batch_signatures{final_signature, final_signature};
+    const std::vector<hta::PublicBytes> batch_messages{message, message};
+    if (!hta::batch_verify_signatures(*roster, generator_context, 2, batch_messages,
+                                      batch_signatures))
+        return EXIT_FAILURE;
+    auto bad_batch_signatures = batch_signatures;
+    bad_batch_signatures[1].authorization.vL[0].back() ^= 1;
+    if (hta::batch_verify_signatures(*roster, generator_context, 2, batch_messages,
+                                     bad_batch_signatures) ||
+        hta::batch_verify_signatures(*roster, generator_context, 2, {message}, batch_signatures) ||
+        hta::batch_verify_signatures(*roster, generator_context, 2, {}, {}) ||
+        hta::batch_verify_signatures(*roster, generator_context, 2, {message, message},
+                                     {final_signature}))
+        return EXIT_FAILURE;
+    auto wrong_message = message;
+    wrong_message.push_back(0);
+    if (hta::batch_verify_signatures(*roster, generator_context, 2, {message, wrong_message},
+                                     batch_signatures))
+        return EXIT_FAILURE;
+    std::vector<hta::PublicBytes> oversized_messages(65, message);
+    std::vector<hta::FinalSignature> oversized_signatures(65, final_signature);
+    if (hta::batch_verify_signatures(*roster, generator_context, 2, oversized_messages,
+                                     oversized_signatures))
+        return EXIT_FAILURE;
     const auto registration3 = hta::create_registration(secret(17), 3, registry);
     const auto larger_roster =
         hta::build_roster({registration1, registration2, registration3}, registry);

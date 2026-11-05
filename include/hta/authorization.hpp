@@ -35,4 +35,11 @@ bool verify_authorization(const Roster &roster, const PublicBytes &generator_con
 bool verify_signature(const Roster &roster, const PublicBytes &generator_context,
                       std::uint32_t threshold, const PublicBytes &message,
                       const FinalSignature &signature);
+
+// Randomized verification of several signatures sharing roster, context, and threshold.
+// Uses four independent CSPRNG coefficients per signature; malformed or oversized batches reject.
+// Caps a batch at 64 signatures and the combined MSM at 32,768 terms.
+bool batch_verify_signatures(const Roster &roster, const PublicBytes &generator_context,
+                             std::uint32_t threshold, const std::vector<PublicBytes> &messages,
+                             const std::vector<FinalSignature> &signatures);
 } // namespace hta

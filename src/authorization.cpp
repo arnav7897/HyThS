@@ -10,6 +10,8 @@
 
 #include <algorithm>
 #include <array>
+#include <memory>
+#include <mutex>
 #include <set>
 #include <stdexcept>
 
@@ -74,6 +76,33 @@ Generators derive_generators(const PublicBytes &context, std::uint32_t N) {
     for (std::uint32_t i = 0; i < N; ++i)
         result.H.push_back(derive_generator_secp256k1(context, N, N + i + 2));
     return result;
+}
+
+std::shared_ptr<const Generators> get_generators(const PublicBytes &context, std::uint32_t N) {
+#ifdef HTA_GENERATOR_CACHE
+    struct Entry {
+        PublicBytes context;
+        std::uint32_t N = 0;
+        std::shared_ptr<const Generators> value;
+    };
+    static std::mutex mutex;
+    static Entry entry;
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        if (entry.value && entry.N == N && entry.context == context)
+            return entry.value;
+    }
+#endif
+    auto value = std::make_shared<const Generators>(derive_generators(context, N));
+#ifdef HTA_GENERATOR_CACHE
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        entry.context = context;
+        entry.N = N;
+        entry.value = value;
+    }
+#endif
+    return value;
 }
 
 SecretScalar scalar_value(std::uint64_t value) {
@@ -213,7 +242,7 @@ prove_authorization(const Roster &roster, const PublicBytes &generator_context,
         return std::nullopt;
 
     try {
-        auto gens = derive_generators(generator_context, params->dims.N);
+        const auto gens = get_generators(generator_context, params->dims.N);
         std::vector<SecretScalar> aL, aR;
         aL.reserve(params->dims.N);
         aR.reserve(params->dims.N);
@@ -252,9 +281,9 @@ prove_authorization(const Roster &roster, const PublicBytes &generator_context,
             sR.push_back(random_secret_scalar_allow_zero());
         }
 
-        std::vector<PublicBytes> a_points{gens.H0};
-        a_points.insert(a_points.end(), gens.G.begin(), gens.G.end());
-        a_points.insert(a_points.end(), gens.H.begin(), gens.H.end());
+        std::vector<PublicBytes> a_points{gens->H0};
+        a_points.insert(a_points.end(), gens->G.begin(), gens->G.end());
+        a_points.insert(a_points.end(), gens->H.begin(), gens->H.end());
         std::vector<SecretScalar> a_scalars;
         a_scalars.reserve(1 + 2 * params->dims.N);
         a_scalars.push_back(clone(alpha));
@@ -332,11 +361,11 @@ prove_authorization(const Roster &roster, const PublicBytes &generator_context,
         std::vector<SecretScalar> t1_scalars;
         t1_scalars.push_back(clone(t1));
         t1_scalars.push_back(clone(tau1));
-        const auto T1 = secret_msm({base_point, gens.H0}, t1_scalars);
+        const auto T1 = secret_msm({base_point, gens->H0}, t1_scalars);
         std::vector<SecretScalar> t2_scalars;
         t2_scalars.push_back(clone(t2));
         t2_scalars.push_back(clone(tau2));
-        const auto T2 = secret_msm({base_point, gens.H0}, t2_scalars);
+        const auto T2 = secret_msm({base_point, gens->H0}, t2_scalars);
         proof.T1 = T1;
         proof.T2 = T2;
         const auto x = public_challenge(
@@ -417,7 +446,7 @@ bool verify_authorization_impl(const Roster &roster, const PublicBytes &generato
         !std::all_of(proof.vR.begin(), proof.vR.end(), valid_public_scalar))
         return false;
     try {
-        const auto gens = derive_generators(generator_context, params->dims.N);
+        const auto gens = get_generators(generator_context, params->dims.N);
         auto padded_keys = roster.public_keys;
         padded_keys.insert(padded_keys.end(), params->dims.ell, PublicBytes{0});
         padded_keys.push_back(base_point);
@@ -433,9 +462,9 @@ bool verify_authorization_impl(const Roster &roster, const PublicBytes &generato
         const auto y_values = powers(y, params->dims.N);
         const auto chi_w = public_chi_w(roster.public_keys.size(), params->dims);
 
-        std::vector<PublicBytes> c1_points{gens.H0};
-        c1_points.insert(c1_points.end(), gens.G.begin(), gens.G.end());
-        c1_points.insert(c1_points.end(), gens.H.begin(), gens.H.end());
+        std::vector<PublicBytes> c1_points{gens->H0};
+        c1_points.insert(c1_points.end(), gens->G.begin(), gens->G.end());
+        c1_points.insert(c1_points.end(), gens->H.begin(), gens->H.end());
         std::vector<PublicBytes> c1_scalars{proof.mu};
         c1_scalars.insert(c1_scalars.end(), proof.vL.begin(), proof.vL.end());
         c1_scalars.insert(c1_scalars.end(), proof.vR.begin(), proof.vR.end());
@@ -484,7 +513,7 @@ bool verify_authorization_impl(const Roster &roster, const PublicBytes &generato
         const auto theta =
             must(public_scalar_add(must(public_scalar_multiply(z2, threshold_scalar)), delta));
         const auto x2 = must(public_scalar_multiply(x, x));
-        const auto left_c4 = public_msm({base_point, gens.H0}, {proof.t_hat, proof.tau_x});
+        const auto left_c4 = public_msm({base_point, gens->H0}, {proof.t_hat, proof.tau_x});
         const auto right_c4 = public_msm({base_point, proof.T1, proof.T2}, {theta, x, x2});
         return left_c4 && right_c4 && *left_c4 == *right_c4;
     } catch (...) {
@@ -541,5 +570,162 @@ bool verify_signature(const Roster &roster, const PublicBytes &generator_context
     } catch (...) {
         return false;
     }
+}
+
+bool batch_verify_signatures(const Roster &roster, const PublicBytes &generator_context,
+                             std::uint32_t threshold, const std::vector<PublicBytes> &messages,
+                             const std::vector<FinalSignature> &signatures) {
+    constexpr std::size_t max_batch_size = 64;
+    constexpr std::size_t max_combined_terms = 32768;
+    if (messages.empty() || messages.size() != signatures.size() ||
+        messages.size() > max_batch_size)
+        return false;
+#ifndef HTA_BATCH_VERIFY
+    for (std::size_t i = 0; i < messages.size(); ++i)
+        if (!verify_signature(roster, generator_context, threshold, messages[i], signatures[i]))
+            return false;
+    return true;
+#else
+    try {
+        std::vector<PublicBytes> batch_points;
+        std::vector<PublicBytes> batch_scalars;
+        PublicBytes one(32, 0), zero(32, 0);
+        one.back() = 1;
+        auto negate = [&](const PublicBytes &value) {
+            return must(public_scalar_subtract(zero, value));
+        };
+        auto append_equation = [&](const std::vector<PublicBytes> &points,
+                                   const std::vector<PublicBytes> &scalars,
+                                   const PublicBytes &coefficient) {
+            if (points.size() != scalars.size())
+                throw std::runtime_error("batch equation dimensions differ");
+            if (batch_points.size() > max_combined_terms ||
+                points.size() > max_combined_terms - batch_points.size())
+                throw std::runtime_error("batch MSM term limit exceeded");
+            for (std::size_t j = 0; j < points.size(); ++j) {
+                batch_points.push_back(points[j]);
+                batch_scalars.push_back(must(public_scalar_multiply(scalars[j], coefficient)));
+            }
+        };
+
+        for (std::size_t item = 0; item < signatures.size(); ++item) {
+            const auto &signature = signatures[item];
+            const auto &schnorr = signature.schnorr;
+            const auto &proof = signature.authorization;
+            if (!valid_public_point(schnorr.masked_key, false) ||
+                !valid_public_point(schnorr.nonce, false) ||
+                !valid_public_scalar(schnorr.response) || !valid_public_point(proof.A, true) ||
+                !valid_public_point(proof.S, true) || !valid_public_point(proof.Qs, true) ||
+                !valid_public_point(proof.T1, true) || !valid_public_point(proof.T2, true))
+                return false;
+            const auto params = validate_public(roster, generator_context, threshold,
+                                                messages[item], schnorr.masked_key);
+            if (!params || proof.vL.size() != params->dims.N || proof.vR.size() != params->dims.N ||
+                !valid_public_scalar(proof.t_hat) || !valid_public_scalar(proof.mu) ||
+                !valid_public_scalar(proof.tau_x) ||
+                !std::all_of(proof.vL.begin(), proof.vL.end(), valid_public_scalar) ||
+                !std::all_of(proof.vR.begin(), proof.vR.end(), valid_public_scalar))
+                return false;
+            const auto N = static_cast<std::size_t>(params->dims.N);
+            const auto per_signature_terms =
+                2 * N + 3 + roster.public_keys.size() + params->dims.ell + 1 + 8;
+            if (batch_points.size() > max_combined_terms ||
+                per_signature_terms > max_combined_terms - batch_points.size())
+                return false;
+
+            const auto gens = get_generators(generator_context, params->dims.N);
+            auto padded_keys = roster.public_keys;
+            padded_keys.insert(padded_keys.end(), params->dims.ell, PublicBytes{0});
+            padded_keys.push_back(base_point);
+            const auto st =
+                statement(params->digest, static_cast<std::uint32_t>(roster.public_keys.size()),
+                          threshold, messages[item], schnorr.masked_key);
+            const auto T0 = proof_prefix(st, proof);
+            const auto y = public_challenge(transcript("Y", {frame(2, T0)}), true);
+            const auto z = public_challenge(transcript("Z", {frame(2, T0), frame(5, y)}), true);
+            const auto x =
+                public_challenge(transcript("X", {frame(2, T0), frame(5, y), frame(5, z),
+                                                  frame(4, proof.T1), frame(4, proof.T2)}),
+                                 true);
+            const auto y_values = powers(y, params->dims.N);
+            const auto chi_w = public_chi_w(roster.public_keys.size(), params->dims);
+
+            std::vector<PublicBytes> c3_left(params->dims.N), c3_right(params->dims.N);
+            for (std::uint32_t j = 0; j < params->dims.N; ++j) {
+                const auto zchi = must(public_scalar_multiply(z, chi_w.first[j]));
+                c3_left[j] = must(public_scalar_subtract(proof.vL[j], zchi));
+                const auto right_base = must(public_scalar_add(proof.vR[j], zchi));
+                c3_right[j] = must(
+                    public_scalar_add(must(public_scalar_multiply(y_values[j], right_base)),
+                                      must(public_scalar_multiply(
+                                          must(public_scalar_multiply(z, z)), chi_w.second[j]))));
+            }
+            if (public_inner_product(c3_left, c3_right) != proof.t_hat)
+                return false;
+
+            const auto z2 = must(public_scalar_multiply(z, z));
+            const auto z3 = must(public_scalar_multiply(z2, z));
+            PublicBytes chi_y(32, 0), chi_w_sum(32, 0);
+            for (std::size_t j = 0; j < roster.public_keys.size() + params->dims.ell; ++j)
+                chi_y = must(public_scalar_add(chi_y, y_values[j]));
+            for (std::uint32_t j = 0; j < params->dims.N; ++j)
+                chi_w_sum = must(public_scalar_add(
+                    chi_w_sum, must(public_scalar_multiply(chi_w.first[j], chi_w.second[j]))));
+            PublicBytes threshold_scalar(32, 0);
+            threshold_scalar[28] = static_cast<std::uint8_t>(threshold >> 24);
+            threshold_scalar[29] = static_cast<std::uint8_t>(threshold >> 16);
+            threshold_scalar[30] = static_cast<std::uint8_t>(threshold >> 8);
+            threshold_scalar[31] = static_cast<std::uint8_t>(threshold);
+            const auto delta = must(public_scalar_subtract(
+                must(public_scalar_multiply(must(public_scalar_subtract(z, z2)), chi_y)),
+                must(public_scalar_multiply(z3, chi_w_sum))));
+            const auto theta =
+                must(public_scalar_add(must(public_scalar_multiply(z2, threshold_scalar)), delta));
+            const auto x2 = must(public_scalar_multiply(x, x));
+            const auto schnorr_challenge = public_challenge(
+                transcript("SIG", {frame(2, params->digest), frame(4, schnorr.masked_key),
+                                   frame_integer(threshold), frame(4, schnorr.nonce),
+                                   frame(2, messages[item])}),
+                false);
+
+            std::vector<PublicBytes> c1_points{proof.A, proof.S, gens->H0};
+            std::vector<PublicBytes> c1_scalars{one, x, negate(proof.mu)};
+            for (std::size_t j = 0; j < params->dims.N; ++j) {
+                c1_points.push_back(gens->G[j]);
+                c1_scalars.push_back(negate(proof.vL[j]));
+            }
+            for (std::size_t j = 0; j < params->dims.N; ++j) {
+                c1_points.push_back(gens->H[j]);
+                c1_scalars.push_back(negate(proof.vR[j]));
+            }
+
+            std::vector<PublicBytes> c2_points{schnorr.masked_key, proof.Qs};
+            std::vector<PublicBytes> c2_scalars{one, x};
+            for (std::size_t j = 0; j < padded_keys.size(); ++j) {
+                c2_points.push_back(padded_keys[j]);
+                c2_scalars.push_back(negate(proof.vL[j]));
+            }
+
+            const std::vector<PublicBytes> c4_points{base_point, gens->H0, base_point, proof.T1,
+                                                     proof.T2};
+            const std::vector<PublicBytes> c4_scalars{proof.t_hat, proof.tau_x, negate(theta),
+                                                      negate(x), negate(x2)};
+            const std::vector<PublicBytes> schnorr_points{base_point, schnorr.nonce,
+                                                          schnorr.masked_key};
+            const std::vector<PublicBytes> schnorr_scalars{schnorr.response, negate(one),
+                                                           negate(schnorr_challenge)};
+
+            append_equation(c1_points, c1_scalars, public_bytes(random_secret_scalar_allow_zero()));
+            append_equation(c2_points, c2_scalars, public_bytes(random_secret_scalar_allow_zero()));
+            append_equation(c4_points, c4_scalars, public_bytes(random_secret_scalar_allow_zero()));
+            append_equation(schnorr_points, schnorr_scalars,
+                            public_bytes(random_secret_scalar_allow_zero()));
+        }
+        const auto combined = public_msm(batch_points, batch_scalars);
+        return combined && *combined == PublicBytes{0};
+    } catch (...) {
+        return false;
+    }
+#endif
 }
 } // namespace hta
