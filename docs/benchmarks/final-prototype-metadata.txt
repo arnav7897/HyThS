@@ -1,0 +1,20 @@
+benchmark_date_utc=2026-11-05
+source_commit=90d581e
+host_os=Ubuntu 24.04.3 LTS x86_64
+kernel=Linux 7.0.0-38-generic
+cpu=12th Gen Intel(R) Core(TM) i5-1240P
+compiler=GCC 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04.1)
+compiler_flags_release=-O3 -DNDEBUG
+cmake=3.28.3
+openssl=3.0.13
+mcl_revision=9f49ba06593e2d426ab6fb9b0e17bc125a6f720c
+mcl_source_sha256=0a910a6c22935a73f537d3b1d95f08554ece7ccd5b2c04ff2e8ad4b19ca06de1
+build_type=Release
+optimized_options=HTA_GENERATOR_CACHE=ON,HTA_BATCH_VERIFY=ON
+reference_options=HTA_GENERATOR_CACHE=OFF,HTA_BATCH_VERIFY=OFF
+protocol_command=protocol_bench 30
+protocol_matrix=(n,t,signers)=(2,1,1),(4,2,2),(8,4,4)
+protocol_samples=5 samples/configuration, 30 sessions/sample, 1 process/build
+primitive_command=primitive_bench 300
+primitive_samples=9 samples/operation, 300 iterations/sample
+mode=research prototype; variable-time secret operations; not security evidence

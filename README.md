@@ -1,32 +1,71 @@
-# Threshold Schnorr research repository
+# HTA Schnorr research prototype
 
-This repository contains a C++ research prototype of the selected protocol from `Threshold_Schnorr_Integrated_Proof_Audit_v5.pdf`: registration and roster checks, two-round signing, authorization proofs, verification, and typed message encoding. It has tests and prototype benchmarks, but no interactive CLI or app.
+Prototype implementation of the two-nonce, roster-based Schnorr protocol with hidden threshold authorization described in `Threshold_Schnorr_Integrated_Proof_Audit_v5.pdf`. It covers registration and roster checks, two-round signing, proof generation, verification, and typed message encoding. There is no interactive CLI or app.
 
-Project authors: Arnav Sharda, Rineet Pandey, Kumar Bhaskar, and Dr R Kabaleeshwaran.
+This is research code. It is not production-ready, independently audited, or constant-time. Passing tests do not prove security. Phase 5 remains open; see the [phase checklist](docs/phase-5-checklist.md). Expert cryptographic review remains a separate gate.
 
-The proof audit states that its proofs require independent verification and do not guarantee implementation security. Do not use this work for production security decisions.
+## Protocol in brief
 
-NIST-inspired testing and documentation do not imply NIST approval, algorithm validation, or FIPS module validation. See the [NIST CAVP](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program).
+Each signer has an individual key registered in an ordered public roster; there is no DKG in this protocol. A coordinator selects at least `t` signers. Signers exchange two rounds: first, each sends two one-use nonce commitments; second, each returns a response. The coordinator combines responses into a Schnorr signature and creates an authorization proof. That proof is designed to show the threshold condition without revealing the selected subset to the verifier. The verifier checks the signature and proof against the message, threshold, roster, and configured generator context.
 
-Repository code is licensed under [Apache-2.0](LICENSE). The included audit PDF is provided as a source document; its authorship and redistribution rights have not yet been established.
+## Implemented suite
 
-For the specification and current implementation evidence, see the [suite draft](docs/suite-draft.md), [audit traceability](docs/traceability.md), [Phase 3 checklist](docs/phase-3-checklist.md), and [Phase 0 review record](docs/phase-0-review.md). Independent expert review remains a separate open item.
+| Part | Current choice |
+|---|---|
+| Group | secp256k1 prime-order group |
+| Point encoding | Strict SEC 1 compressed points (33 bytes); `00` identity only where allowed |
+| Scalar encoding | Canonical 32-byte big-endian integer below the group order; no reduction of input bytes |
+| Transcript | `HTA-secp256k1-v1`, typed and length-prefixed |
+| Hash | SHA-256 for transcripts and challenges |
+| Generator derivation | RFC 9380 `secp256k1_XMD:SHA-256_SSWU_RO_`, DST `HTA-v1-secp256k1-Hgen` |
+| Scalar challenges | Domain-separated SHA-256 with rejection sampling; `Y`, `Z`, `X` are nonzero; `POP`, `NON`, and `SIG` may be zero |
+| Curve backend | mcl `9f49ba06593e2d426ab6fb9b0e17bc125a6f720c`; variable-time secret operations remain a limitation |
+| Randomness and nonces | OpenSSL 3 CSPRNG (`RAND_priv_bytes`) with rejection sampling; two independent, one-use signing nonces |
+| Generator context | Caller must authenticate and pin suite, context, and dimensions; the library does not authenticate application configuration |
+| Proof of possession | Schnorr-style heuristic; it does not instantiate the paper's ideal extractable registration assumption |
 
-The existing checks require CMake, a C++17 compiler, OpenSSL 3 development headers, Python 3, and network access to download the hash-pinned mcl source on the first build:
+See the [suite draft](docs/suite-draft.md) for framing and validation rules, the [audit traceability](docs/traceability.md) for paper-to-code mapping, and the [Phase 3 checklist](docs/phase-3-checklist.md) for protocol implementation evidence.
+
+## Latest prototype benchmark
+
+Fresh Release run on 2026-11-05. Each configuration used five timing samples of 30 sessions in one process. The reference build disables generator caching and batch verification. The optimized build enables both. Times are milliseconds per operation; batch time is per signature in a four-signature batch.
+
+| n | t | Signers | Signature bytes | Auth.Prove optimized / reference | Verify optimized / reference | Batch verify optimized / reference |
+|---:|---:|---:|---:|---:|---:|---:|
+| 2 | 1 | 1 | 875 | 0.688 / 2.424 | 0.550 / 2.253 | 0.456 / 2.220 |
+| 4 | 2 | 2 | 1,097 | 0.963 / 3.562 | 0.697 / 3.268 | 0.540 / 3.232 |
+| 8 | 4 | 4 | 1,467 | 1.429 / 5.555 | 0.936 / 5.067 | 0.782 / 5.019 |
+
+These are single-host prototype measurements, not publication-grade results or comparisons against other protocols. Raw samples, environment, and reproduction steps are in [benchmark results](docs/benchmarks/README.md). The bucket sweep showed unstable winners, so protocol MSMs retain mcl's default.
+
+## Build, test, and benchmark
+
+Requires CMake 3.21+, a C++17 compiler, OpenSSL 3 development files, and Python 3. The first build downloads the hash-pinned mcl source.
 
 ```sh
-cmake -S . -B build
-cmake --build build
-ctest --test-dir build --output-on-failure
+cmake --preset debug
+cmake --build --preset debug -j2
+ctest --preset debug --output-on-failure
 python3 -m unittest discover -s tests -v
 ```
 
-The C++ suite includes primitive, protocol, malformed-frame, simulator-equation, and deterministic KAT checks. Python tests cover reference vectors and algebra. Tests are evidence about sampled behavior; they do not prove security.
+The C++ tests cover primitives, protocol behavior, malformed frames, simulator equations, and deterministic KATs. Python tests cover reference vectors and protocol algebra.
 
-The experimental secp256k1 adapter handles public inputs only. It does not support signing keys or nonces, and it must not share a process with code that reinitializes mcl for another curve. No constant-time claim is made.
+Run the default protocol matrix (`n=2,4,8`) and primitive benchmarks:
 
-The CMake presets include `debug`, `release`, `asan-ubsan`, `tsan`, `coverage`, `fuzz`, and `bench`. Presets require CMake 3.21 or newer; `fuzz` requires Clang. Run the normal tests with `cmake --preset debug`, `cmake --build --preset debug`, and `ctest --preset debug --output-on-failure`. The extended Phase 3 runner performs 10,000 randomized end-to-end runs for each documented `(n,t)` set. To benchmark those sizes and thresholds, build the `bench` preset and run `protocol_bench iterations n threshold [signers]`; examples and measured output are in the Phase 3 checklist.
+```sh
+cmake --preset bench
+cmake --build --preset bench --target protocol_bench primitive_bench -j2
+./build/bench/protocol_bench 30
+./build/bench/primitive_bench 300
+```
 
-`docker build -t hta-scaffold .` builds and tests the scaffold in an Ubuntu container. The base image is pinned by digest and the toolchain uses the Ubuntu archive snapshot dated 2026-10-01. The certificate bootstrap uses a version-pinned package and its dependencies from the live archive. Repeatability depends on archive availability and has not yet been verified by independent clean builds.
+Use `cmake --preset bench-reference` for the reference build. See [benchmark docs](docs/benchmarks/README.md) for options and saved results. Presets also include ASan/UBSan, TSan, coverage, and fuzz builds; fuzz requires Clang.
 
-The CI workflow checks GCC 12/13, Clang 16/17, clang-format, clang-tidy, and cppcheck. Its container repeatability job is temporarily commented out while the pinned Ubuntu snapshot endpoint returns HTTP 502; re-enable it when the endpoint recovers. When active, it builds twice without cache and compares installed package versions and C++ test executable hashes. This does not prove bit-for-bit reproducibility of every image artifact.
+CI covers the preset matrix, GCC/Clang versions, Linux/macOS platforms, and static analysis. `docker build -t hta-scaffold .` builds and tests the container. Its clean-build comparison is currently disabled because the pinned Ubuntu snapshot endpoint returns HTTP 502; image reproducibility is not established.
+
+## Limits and project info
+
+The signer replay-ID set is process-local, capped at 65,536, and rejects new sessions at capacity; it is not durable across restart. Fixed-base precomputation and a libsecp256k1 comparison are still open. Tests and benchmark results do not establish security. NIST-inspired testing does not imply NIST approval or FIPS validation.
+
+Authors: Arnav Sharda, Rineet Pandey, Kumar Bhaskar, and Dr R Kabaleeshwaran. Repository code is licensed under [Apache-2.0](LICENSE). Rights to redistribute the included audit PDF have not been established.
