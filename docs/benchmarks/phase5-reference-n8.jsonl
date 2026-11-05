@@ -1,0 +1,12 @@
+{"n":8,"threshold":5,"signers":5,"stage":"registration_and_roster","iterations_per_sample":1,"samples_ns":[1900144,2094857,1596799,1537747,1519564],"median_ns_per_op":1596799}
+{"n":8,"threshold":5,"signers":5,"stage":"signer_round1","iterations_per_sample":30,"samples_ns":[28858736,28733584,28836835,29190998,29577279],"median_ns_per_op":961957}
+{"n":8,"threshold":5,"signers":5,"stage":"aggregate_commitments","iterations_per_sample":30,"samples_ns":[9129648,9182338,9219482,9328830,9332782],"median_ns_per_op":307316}
+{"n":8,"threshold":5,"signers":5,"stage":"signer_round2","iterations_per_sample":30,"samples_ns":[13336753,12826846,13035430,13229361,13563901],"median_ns_per_op":440978}
+{"n":8,"threshold":5,"signers":5,"stage":"partial_verify_shares","iterations_per_sample":30,"samples_ns":[26468588,26153878,26596552,26898644,27063624],"median_ns_per_op":886551}
+{"n":8,"threshold":5,"signers":5,"stage":"aggregate_responses","iterations_per_sample":30,"samples_ns":[3185979,3191490,3203409,3246018,3274373],"median_ns_per_op":106780}
+{"n":8,"threshold":5,"signers":5,"stage":"authorization_prove","iterations_per_sample":30,"samples_ns":[269516054,269125960,265560702,268865465,274566730],"median_ns_per_op":8970865}
+{"n":8,"threshold":5,"signers":5,"stage":"full_verify","iterations_per_sample":30,"samples_ns":[244053687,243000916,242164855,243330419,247052836],"median_ns_per_op":8111013}
+{"n":8,"threshold":5,"signers":5,"stage":"serialize","iterations_per_sample":30,"samples_ns":[2097385,1967955,1910540,1971362,2129777],"median_ns_per_op":65712}
+{"n":8,"threshold":5,"signers":5,"stage":"batch_verify_reference","iterations_per_sample":4,"samples_ns":[31691684,31964572,32738136,32180978,31551101],"median_ns_per_op":7991143}
+{"n":8,"threshold":5,"signers":5,"stage":"batch_verify","iterations_per_sample":4,"samples_ns":[32203610,32458204,33124302,32761538,32028098],"median_ns_per_op":8114551}
+{"n":8,"threshold":5,"signers":5,"stage":"serialized_signature_size","output_bytes":1467}
