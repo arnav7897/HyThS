@@ -43,7 +43,7 @@ What this change does: the repository implements draft typed framing, public sca
 
 - Fresh Debug CMake build with GCC 13.3.0 succeeded; `ctest --test-dir /tmp/hyths-phase0-review --output-on-failure` passed 2/2 tests.
 - `python3 -m unittest discover -s tests -p 'test_*.py' -v` passed 5/5 tests, including toy signing and authorization algebra and transcript examples.
-- `docs/benchmarking/hypotheses.md` and `docs/traceability.md` are tracked; the normative frozen specification remains outstanding. The tested dimensions follow audit equations (1)–(2); framing is a local draft choice, not a byte encoding supplied by the PDF.
+- `docs/benchmarks/hypotheses.md` and `docs/traceability.md` are tracked; the normative frozen specification remains outstanding. The tested dimensions follow audit equations (1)–(2); framing is a local draft choice, not a byte encoding supplied by the PDF.
 - No concrete defect was confirmed in the inspected framing or dimension code within this limited review. Tests are not security proofs. No backend, nonce persistence, full protocol, adversarial implementation, interoperability, or side-channel behavior was verified. This review does not replace the requested independent expert review.
 
 Verdict: Phase 0 is not complete; resolve findings 1 and 2 before the suite freeze.
