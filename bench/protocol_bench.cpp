@@ -54,6 +54,7 @@ struct Timing {
     std::uint64_t verify = 0;
     std::uint64_t serialize = 0;
     std::size_t signature_bytes = 0;
+    hta::FinalSignature signature;
 };
 
 Timing run_once(const hta::Roster &roster, const std::vector<std::uint64_t> &subset,
@@ -125,6 +126,7 @@ Timing run_once(const hta::Roster &roster, const std::vector<std::uint64_t> &sub
                                "authorization prove");
     timing.prove = elapsed_ns(start);
     const hta::FinalSignature signature{schnorr, proof};
+    timing.signature = signature;
 
     start = Clock::now();
     if (!hta::verify_signature(roster, generator_context, threshold, message, signature))
@@ -174,11 +176,21 @@ void run_size(std::uint32_t n, std::uint32_t threshold, std::uint32_t signer_cou
 
     (void)run_once(roster, subset, threshold, message, generator_context, sid_counter++);
     std::array<std::array<std::uint64_t, 8>, sample_count> samples{};
+    std::array<std::uint64_t, sample_count> batch_reference_samples{}, batch_samples{};
     std::size_t output_size = 0;
+    const auto batch_size = std::min<std::size_t>(iterations, 4);
     for (std::size_t sample = 0; sample < sample_count; ++sample) {
+        std::vector<Bytes> batch_messages;
+        std::vector<hta::FinalSignature> batch_signatures;
+        batch_messages.reserve(batch_size);
+        batch_signatures.reserve(batch_size);
         for (std::size_t iteration = 0; iteration < iterations; ++iteration) {
-            const auto result =
-                run_once(roster, subset, threshold, message, generator_context, sid_counter++);
+            auto message_variant = message;
+            const auto message_id = static_cast<std::uint64_t>(sample * iterations + iteration);
+            for (std::size_t byte = 0; byte < 8; ++byte)
+                message_variant.push_back(static_cast<std::uint8_t>(message_id >> (56 - byte * 8)));
+            const auto result = run_once(roster, subset, threshold, message_variant,
+                                         generator_context, sid_counter++);
             samples[sample][0] += result.round1;
             samples[sample][1] += result.aggregate_commitments;
             samples[sample][2] += result.round2;
@@ -188,7 +200,22 @@ void run_size(std::uint32_t n, std::uint32_t threshold, std::uint32_t signer_cou
             samples[sample][6] += result.verify;
             samples[sample][7] += result.serialize;
             output_size = result.signature_bytes;
+            if (batch_signatures.size() < batch_size) {
+                batch_messages.push_back(std::move(message_variant));
+                batch_signatures.push_back(result.signature);
+            }
         }
+        auto start = Clock::now();
+        for (std::size_t i = 0; i < batch_size; ++i)
+            if (!hta::verify_signature(roster, generator_context, threshold, batch_messages[i],
+                                       batch_signatures[i]))
+                throw std::runtime_error("batch reference signature failed verification");
+        batch_reference_samples[sample] = elapsed_ns(start);
+        start = Clock::now();
+        if (!hta::batch_verify_signatures(roster, generator_context, threshold, batch_messages,
+                                          batch_signatures))
+            throw std::runtime_error("batch signature verification failed");
+        batch_samples[sample] = elapsed_ns(start);
     }
     print_stage(n, threshold, signer_count, "registration_and_roster", setup_samples, 1);
     constexpr std::array<const char *, 8> names{
@@ -200,6 +227,9 @@ void run_size(std::uint32_t n, std::uint32_t threshold, std::uint32_t signer_cou
             times[sample] = samples[sample][stage];
         print_stage(n, threshold, signer_count, names[stage], times, iterations);
     }
+    print_stage(n, threshold, signer_count, "batch_verify_reference", batch_reference_samples,
+                batch_size);
+    print_stage(n, threshold, signer_count, "batch_verify", batch_samples, batch_size);
     std::cout << "{\"n\":" << n << ",\"threshold\":" << threshold << ",\"signers\":" << signer_count
               << ",\"stage\":\"serialized_signature_size\",\"output_bytes\":" << output_size
               << "}\n";

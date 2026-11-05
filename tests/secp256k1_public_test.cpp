@@ -42,5 +42,10 @@ int main() {
         hta::public_msm({g, x_too_large}, {one, one}) ||
         hta::public_msm({g, g}, {one, one}) != two_g || hta::public_msm({}, {}) != PublicBytes{0})
         return EXIT_FAILURE;
+    for (const std::size_t bucket : {2U, 3U, 4U, 5U, 8U, 12U})
+        if (hta::public_msm_with_bucket({g, g}, {one, one}, bucket) != two_g)
+            return EXIT_FAILURE;
+    if (hta::public_msm_with_bucket({g}, {one}, 1) || hta::public_msm_with_bucket({g}, {one}, 13))
+        return EXIT_FAILURE;
     return EXIT_SUCCESS;
 }

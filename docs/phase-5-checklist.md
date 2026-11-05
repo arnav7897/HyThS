@@ -7,16 +7,21 @@ Research prototype only. Variable-time secret arithmetic, external generator-con
 - [x] Signer replay IDs have a hard process-local cap of 65,536. Constructor may set a lower cap for a deployment or test.
 - [x] When full, signer rejects new session IDs. Existing IDs remain reserved through completion and abort; no eviction enables replay.
 - [x] Test covers fail-closed behavior after a session completes at capacity.
+- [x] One-entry, exact-key generator cache for repeated context and dimension.
+- [x] Randomized cross-signature verifier combines C1, C2, C4, and Schnorr equations in one MSM; checks C3 exactly; and rejects malformed or oversized batches (64 signatures / 32,768 MSM terms maximum).
+- [x] Spec-literal verifier remains available and is the fallback when batching is disabled.
+- [x] Public MSM exposes a diagnostic bucket sweep; protocol calls retain mcl's default because measured winners varied between runs.
+- [x] Ablation switches: `HTA_GENERATOR_CACHE` and `HTA_BATCH_VERIFY`. `bench-reference` disables both.
+- [x] Optimized and reference builds produce byte-identical Phase 3 KAT responses.
+- [x] Raw benchmark samples and metadata recorded in `docs/benchmarks/phase5-*.jsonl` and `docs/benchmarks/phase5-benchmark-report.md`.
 
 ## Remaining
 
-- [ ] Fixed-base precomputation for `G`, `H0`, `G_i`, `H_i`, and roster-dependent `PK_pad`.
-- [ ] Tune Pippenger window by MSM size `k` and benchmark.
-- [ ] Durable replay storage if deployments must preserve replay protection across restart.
-- [ ] Randomized batch verification with a spec-literal verifier retained for comparison.
-- [ ] Cross-signature batch verification and differential KAT/negative tests.
-- [ ] Add ablation switches and report reproducible speedups.
+- [ ] Fixed-base precomputation tables for `G`, `H0`, `G_i`, `H_i`, and roster-dependent `PK_pad`.
+- [ ] Differential backend comparison with libsecp256k1. `blst` belongs with the Phase 6 BLS baseline, not this secp256k1 implementation.
+- [ ] Repeat bucket and protocol benchmarks across more `n,t` settings and independent process runs before selecting any non-default profile.
+- [ ] Durable replay storage only if restart-safe replay protection becomes a requirement; current bounded design fails closed at capacity.
 
-The current bounded replay set does not persist across process restarts. Services needing restart-safe replay protection still need durable state. A full capacity rejects all further new sessions until restart.
+The bounded replay set does not persist across restarts. A full set rejects new sessions until restart. Batched verification has probabilistic soundness and remains research code, not a security proof.
 
-Phase 5 exit requires byte-identical KATs and documented speedups with caveats and ablation controls. No exit claim until those results exist.
+Core exit evidence exists: KAT bytes match; local speedups have raw samples and caveats; implemented optimizations have ablation switches. Phase 5 remains open because fixed-base tables, backend comparison, and broader benchmark evidence remain incomplete.

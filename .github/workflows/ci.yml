@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        preset: [debug, opcounts, release, asan-ubsan, tsan, coverage, fuzz, bench]
+        preset: [debug, opcounts, release, asan-ubsan, tsan, coverage, fuzz, bench, bench-reference]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
