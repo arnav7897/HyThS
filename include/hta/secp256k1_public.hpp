@@ -22,4 +22,9 @@ std::optional<PublicBytes> public_point_multiply(const PublicBytes &point,
 std::optional<PublicBytes> public_generator_multiply(const PublicBytes &scalar);
 std::optional<PublicBytes> public_msm(const std::vector<PublicBytes> &points,
                                       const std::vector<PublicBytes> &scalars);
+// Diagnostic hook for benchmarking mcl's public MSM bucket/window parameter.
+// Passing zero selects mcl's size-dependent heuristic; values 2..12 force a bucket size.
+std::optional<PublicBytes> public_msm_with_bucket(const std::vector<PublicBytes> &points,
+                                                  const std::vector<PublicBytes> &scalars,
+                                                  std::size_t bucket);
 } // namespace hta

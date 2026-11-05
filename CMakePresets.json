@@ -10,7 +10,8 @@
     { "name": "tsan", "inherits": "debug", "cacheVariables": { "HTA_INSTRUMENTATION": "tsan" } },
     { "name": "coverage", "inherits": "debug", "cacheVariables": { "HTA_INSTRUMENTATION": "coverage" } },
     { "name": "fuzz", "inherits": "debug", "cacheVariables": { "CMAKE_CXX_COMPILER": "clang++", "HTA_INSTRUMENTATION": "fuzz" } },
-    { "name": "bench", "inherits": "release", "cacheVariables": { "HTA_BUILD_BENCH": "ON" } }
+    { "name": "bench", "inherits": "release", "cacheVariables": { "HTA_BUILD_BENCH": "ON" } },
+    { "name": "bench-reference", "inherits": "bench", "cacheVariables": { "HTA_BATCH_VERIFY": "OFF", "HTA_GENERATOR_CACHE": "OFF" } }
   ],
   "buildPresets": [
     { "name": "debug", "configurePreset": "debug" },
@@ -20,7 +21,8 @@
     { "name": "tsan", "configurePreset": "tsan" },
     { "name": "coverage", "configurePreset": "coverage" },
     { "name": "fuzz", "configurePreset": "fuzz" },
-    { "name": "bench", "configurePreset": "bench" }
+    { "name": "bench", "configurePreset": "bench" },
+    { "name": "bench-reference", "configurePreset": "bench-reference" }
   ],
   "testPresets": [
     { "name": "debug", "configurePreset": "debug", "output": { "outputOnFailure": true } },
@@ -30,6 +32,7 @@
     { "name": "tsan", "configurePreset": "tsan", "output": { "outputOnFailure": true } },
     { "name": "coverage", "configurePreset": "coverage", "output": { "outputOnFailure": true } },
     { "name": "fuzz", "configurePreset": "fuzz", "output": { "outputOnFailure": true } },
-    { "name": "bench", "configurePreset": "bench", "output": { "outputOnFailure": true } }
+    { "name": "bench", "configurePreset": "bench", "output": { "outputOnFailure": true } },
+    { "name": "bench-reference", "configurePreset": "bench-reference", "output": { "outputOnFailure": true } }
   ]
 }

@@ -180,7 +180,15 @@ std::optional<PublicBytes> public_generator_multiply(const PublicBytes &scalar) 
 
 std::optional<PublicBytes> public_msm(const std::vector<PublicBytes> &points,
                                       const std::vector<PublicBytes> &scalars) {
+    return public_msm_with_bucket(points, scalars, 0);
+}
+
+std::optional<PublicBytes> public_msm_with_bucket(const std::vector<PublicBytes> &points,
+                                                  const std::vector<PublicBytes> &scalars,
+                                                  std::size_t bucket) {
     if (points.size() != scalars.size())
+        return std::nullopt;
+    if (bucket != 0 && (bucket < 2 || bucket > 12))
         return std::nullopt;
     initialize();
     if (points.empty())
@@ -195,7 +203,7 @@ std::optional<PublicBytes> public_msm(const std::vector<PublicBytes> &points,
     HTA_INCREMENT(msm, 1);
     HTA_INCREMENT(msm_bases, points.size());
     mcl::G1 result;
-    mcl::G1::mulVec(result, decoded_points.data(), decoded_scalars.data(), points.size());
+    mcl::G1::mulVec(result, decoded_points.data(), decoded_scalars.data(), points.size(), bucket);
     return encode_point(result);
 }
 } // namespace hta

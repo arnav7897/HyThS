@@ -75,14 +75,28 @@ int main(int argc, char **argv) {
         measure("secp256k1_hash_to_curve", iterations,
                 [&] { return hta::hash_to_curve_secp256k1(message).size(); });
         for (const std::size_t count : {1U, 8U, 32U, 128U}) {
-            std::vector<Bytes> points(count, generator);
+            std::vector<Bytes> points;
+            points.reserve(count);
             std::vector<Bytes> scalars;
             scalars.reserve(count);
-            for (std::size_t i = 0; i < count; ++i)
+            for (std::size_t i = 0; i < count; ++i) {
+                points.push_back(require(
+                    hta::public_generator_multiply(scalar(static_cast<std::uint8_t>(i + 1)))));
                 scalars.push_back(scalar(static_cast<std::uint8_t>(i % 251 + 1)));
+            }
             const std::string label = "secp256k1_msm_" + std::to_string(count);
             measure(label.c_str(), iterations,
                     [&] { return require(hta::public_msm(points, scalars)).size(); });
+            const auto reference = require(hta::public_msm(points, scalars));
+            for (const std::size_t bucket : {2U, 3U, 4U, 5U, 6U, 8U, 10U, 12U}) {
+                if (require(hta::public_msm_with_bucket(points, scalars, bucket)) != reference)
+                    throw std::runtime_error("MSM bucket changed output");
+                const std::string bucket_label =
+                    "secp256k1_msm_" + std::to_string(count) + "_bucket_" + std::to_string(bucket);
+                measure(bucket_label.c_str(), iterations, [&] {
+                    return require(hta::public_msm_with_bucket(points, scalars, bucket)).size();
+                });
+            }
         }
         return EXIT_SUCCESS;
     } catch (const std::exception &error) {
