@@ -189,6 +189,8 @@ std::optional<PublicBytes> public_generator_multiply(const PublicBytes &scalar) 
             mcl::G1 point;
             if (!decode_point(encoded, false, point))
                 throw std::runtime_error("invalid generator");
+            // Pinned mcl's table setup also reaches BitIterator; clang-analyzer misses init().
+            // NOLINTNEXTLINE(clang-analyzer-optin.cplusplus.UninitializedObject)
             table.init(point, 256, 4);
         }
     };
