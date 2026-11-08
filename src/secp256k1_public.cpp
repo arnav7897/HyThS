@@ -189,16 +189,12 @@ std::optional<PublicBytes> public_generator_multiply(const PublicBytes &scalar) 
             mcl::G1 point;
             if (!decode_point(encoded, false, point))
                 throw std::runtime_error("invalid generator");
-            // Pinned mcl's table setup also reaches BitIterator; clang-analyzer misses init().
-            // NOLINTNEXTLINE(clang-analyzer-optin.cplusplus.UninitializedObject)
             table.init(point, 256, 4);
         }
     };
     static const GeneratorTable fixed(generator);
     mcl::G1 result;
     HTA_INCREMENT(generator_multiply, 1);
-    // Pinned mcl initializes BitIterator through init(); clang-analyzer misses it.
-    // NOLINTNEXTLINE(clang-analyzer-optin.cplusplus.UninitializedObject)
     fixed.table.mul(result, s);
     return encode_point(result);
 #else
