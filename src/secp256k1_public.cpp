@@ -10,6 +10,9 @@
 #include <stdexcept>
 
 #include <mcl/g1_def.hpp>
+#ifdef HTA_PUBLIC_FIXED_BASE
+#include <mcl/window_method.hpp>
+#endif
 
 namespace hta {
 namespace {
@@ -175,7 +178,28 @@ std::optional<PublicBytes> public_generator_multiply(const PublicBytes &scalar) 
                                        0x55, 0xa0, 0x62, 0x95, 0xce, 0x87, 0x0b, 0x07, 0x02,
                                        0x9b, 0xfc, 0xdb, 0x2d, 0xce, 0x28, 0xd9, 0x59, 0xf2,
                                        0x81, 0x5b, 0x16, 0xf8, 0x17, 0x98};
+#ifdef HTA_PUBLIC_FIXED_BASE
+    initialize();
+    mcl::Fr s;
+    if (!decode_scalar(scalar, s))
+        return std::nullopt;
+    struct GeneratorTable {
+        mcl::fp::WindowMethod<mcl::G1> table;
+        explicit GeneratorTable(const PublicBytes &encoded) {
+            mcl::G1 point;
+            if (!decode_point(encoded, false, point))
+                throw std::runtime_error("invalid generator");
+            table.init(point, 256, 4);
+        }
+    };
+    static const GeneratorTable fixed(generator);
+    mcl::G1 result;
+    HTA_INCREMENT(generator_multiply, 1);
+    fixed.table.mul(result, s);
+    return encode_point(result);
+#else
     return multiply_encoded_point(generator, scalar, true);
+#endif
 }
 
 std::optional<PublicBytes> public_msm(const std::vector<PublicBytes> &points,

@@ -28,15 +28,25 @@ See the [suite draft](docs/suite-draft.md) for framing and validation rules, the
 
 ## Latest prototype benchmark
 
-Fresh Release run on 2026-11-05. Each configuration used five timing samples of 30 sessions in one process. The reference build disables generator caching and batch verification. The optimized build enables both. Times are milliseconds per operation; batch time is per signature in a four-signature batch.
+Release run on 2026-11-08, using the optimized build on one Intel i5-1240P host. Each `(n,t,k)` configuration used five independent process launches, each with five groups of six signing sessions, except the final large-threshold row which used one session per group. Values are mean milliseconds per session across the 25 grouped samples; Round 1 and Round 2 sum work across the `k` selected signers in one process.
 
-| n | t | Signers | Signature bytes | Auth.Prove optimized / reference | Verify optimized / reference | Batch verify optimized / reference |
-|---:|---:|---:|---:|---:|---:|---:|
-| 2 | 1 | 1 | 875 | 0.688 / 2.424 | 0.550 / 2.253 | 0.456 / 2.220 |
-| 4 | 2 | 2 | 1,097 | 0.963 / 3.562 | 0.697 / 3.268 | 0.540 / 3.232 |
-| 8 | 4 | 4 | 1,467 | 1.429 / 5.555 | 0.936 / 5.067 | 0.782 / 5.019 |
+| n | t | k | Round 1 | Round 2 | Prove | Verify | Signature bytes |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 8 | 4 | 4 | 1.839 | 0.830 | 5.453 | 3.462 | 1467 |
+| 8 | 4 | 5 | 2.146 | 0.981 | 5.057 | 3.245 | 1467 |
+| 16 | 8 | 8 | 5.019 | 1.753 | 9.208 | 5.483 | 2133 |
+| 32 | 1 | 32 | 26.867 | 6.276 | 14.019 | 8.041 | 3391 |
+| 32 | 16 | 16 | 13.541 | 3.237 | 14.851 | 8.437 | 3391 |
+| 32 | 32 | 32 | 26.173 | 6.025 | 13.814 | 7.915 | 3391 |
+| 64 | 32 | 32 | 45.439 | 6.749 | 25.997 | 14.345 | 5833 |
+| 128 | 64 | 64 | 159.574 | 13.027 | 46.367 | 23.919 | 10643 |
+| 256 | 128 | 128 | 590.178 | 26.255 | 84.752 | 44.274 | 20189 |
+| 512 | 1 | 1 | 8.811 | 0.210 | 164.166 | 79.666 | 39207 |
+| 512 | 256 | 256 | 622.769 | 14.531 | 44.008 | 21.831 | 39207 |
 
-These are single-host prototype measurements, not publication-grade results or comparisons against other protocols. Raw samples, environment, and reproduction steps are in [benchmark results](docs/benchmarks/README.md). The bucket sweep showed unstable winners, so protocol MSMs retain mcl's default.
+These unpinned, single-host prototype results do not represent network latency or a comparison against other protocols. The two `n=512` runs show substantial variation despite using the same binary; they were collected separately with different group sizes and should not be interpreted as a threshold effect. The measured source had uncommitted changes. Raw samples, metadata, source snapshot and reproduction details are in the [benchmark plan](benchmark.md) and [benchmark results](docs/benchmarks/README.md).
+
+The [benchmark plan](benchmark.md) covers correctness fixes, dropout recovery, optimizations, larger roster and threshold matrices, upstream comparisons, measurement methodology, and per-step complexity. Preliminary results and the full paper study have separate milestones.
 
 ## Build, test, and benchmark
 
@@ -66,6 +76,6 @@ CI covers the preset matrix, GCC/Clang versions, Linux/macOS platforms, and stat
 
 ## Limits and project info
 
-The signer replay-ID set is process-local, capped at 65,536, and rejects new sessions at capacity; it is not durable across restart. Fixed-base precomputation and a libsecp256k1 comparison are still open. Tests and benchmark results do not establish security. NIST-inspired testing does not imply NIST approval or FIPS validation.
+The signer replay-ID set is process-local, capped at 65,536, and rejects new sessions at capacity; it is not durable across restart. A nonzero signer timeout enables automatic expiry of live sessions, with one worker thread per signer; zero disables automatic expiry. Cleanup may wait for an in-flight operation, while late Round 2 requests reject. The application must detect dropouts and coordinate a fresh session. Public generator multiplication has optional fixed-base precomputation; proof-generator and roster-key tables remain open. The libsecp256k1 comparison covers public primitives only. Tests and benchmark results do not establish security. NIST-inspired testing does not imply NIST approval or FIPS validation.
 
 Authors: Arnav Sharda, Rineet Pandey, Kumar Bhaskar, and Dr R Kabaleeshwaran. Repository code is licensed under [Apache-2.0](LICENSE). Rights to redistribute the included audit PDF have not been established.

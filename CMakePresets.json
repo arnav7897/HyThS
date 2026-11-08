@@ -11,7 +11,7 @@
     { "name": "coverage", "inherits": "debug", "cacheVariables": { "HTA_INSTRUMENTATION": "coverage" } },
     { "name": "fuzz", "inherits": "debug", "cacheVariables": { "CMAKE_CXX_COMPILER": "clang++", "HTA_INSTRUMENTATION": "fuzz" } },
     { "name": "bench", "inherits": "release", "cacheVariables": { "HTA_BUILD_BENCH": "ON" } },
-    { "name": "bench-reference", "inherits": "bench", "cacheVariables": { "HTA_BATCH_VERIFY": "OFF", "HTA_GENERATOR_CACHE": "OFF" } }
+    { "name": "bench-reference", "inherits": "bench", "cacheVariables": { "HTA_BATCH_VERIFY": "OFF", "HTA_GENERATOR_CACHE": "OFF", "HTA_PUBLIC_FIXED_BASE": "OFF" } }
   ],
   "buildPresets": [
     { "name": "debug", "configurePreset": "debug" },

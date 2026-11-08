@@ -184,7 +184,7 @@ std::pair<std::vector<PublicBytes>, std::vector<PublicBytes>> public_chi_w(std::
         w[i] = one;
     for (std::uint32_t j = 0; j < dims.ell; ++j) {
         PublicBytes power(32, 0);
-        power.back() = static_cast<std::uint8_t>(std::uint64_t{1} << j);
+        power[power.size() - 1 - j / 8] = static_cast<std::uint8_t>(1U << (j % 8));
         const auto negative = public_scalar_subtract(PublicBytes(32, 0), power);
         if (!negative)
             throw std::runtime_error("invalid public surplus weight");
@@ -579,6 +579,13 @@ bool batch_verify_signatures(const Roster &roster, const PublicBytes &generator_
     constexpr std::size_t max_combined_terms = 32768;
     if (messages.empty() || messages.size() != signatures.size() ||
         messages.size() > max_batch_size)
+        return false;
+    const auto dims = dimensions(static_cast<std::uint32_t>(roster.public_keys.size()), threshold);
+    if (roster.public_keys.size() > 65535 || !dims)
+        return false;
+    const auto per_signature_terms =
+        2 * static_cast<std::size_t>(dims->N) + 3 + roster.public_keys.size() + dims->ell + 1 + 8;
+    if (per_signature_terms > max_combined_terms / signatures.size())
         return false;
 #ifndef HTA_BATCH_VERIFY
     for (std::size_t i = 0; i < messages.size(); ++i)

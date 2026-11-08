@@ -1,0 +1,11 @@
+{"n": 512, "t": 256, "k": 256, "stage": "aggregate_commitments", "samples": 25, "mean_ns": 7548303.4, "median_ns": 7375696.0, "min_ns": 7292076.0, "max_ns": 10326419.0}
+{"n": 512, "t": 256, "k": 256, "stage": "aggregate_responses", "samples": 25, "mean_ns": 97033.04, "median_ns": 95063.0, "min_ns": 92495.0, "max_ns": 119561.0}
+{"n": 512, "t": 256, "k": 256, "stage": "authorization_prove", "samples": 25, "mean_ns": 44008065.88, "median_ns": 43853056.0, "min_ns": 43321913.0, "max_ns": 47933100.0}
+{"n": 512, "t": 256, "k": 256, "stage": "batch_verify", "samples": 25, "mean_ns": 18792335.68, "median_ns": 18740555.0, "min_ns": 18408876.0, "max_ns": 19543635.0}
+{"n": 512, "t": 256, "k": 256, "stage": "batch_verify_reference", "samples": 25, "mean_ns": 21659088.16, "median_ns": 21615754.0, "min_ns": 21389300.0, "max_ns": 21984705.0}
+{"n": 512, "t": 256, "k": 256, "stage": "full_verify", "samples": 25, "mean_ns": 21830558.48, "median_ns": 21692031.0, "min_ns": 21352845.0, "max_ns": 22831401.0}
+{"n": 512, "t": 256, "k": 256, "stage": "partial_verify_shares", "samples": 25, "mean_ns": 23504845.32, "median_ns": 23396182.0, "min_ns": 22920480.0, "max_ns": 25329368.0}
+{"n": 512, "t": 256, "k": 256, "stage": "registration_and_roster", "samples": 25, "mean_ns": 53729778.28, "median_ns": 53468663.0, "min_ns": 53101876.0, "max_ns": 56509577.0}
+{"n": 512, "t": 256, "k": 256, "stage": "serialize", "samples": 25, "mean_ns": 96572.2, "median_ns": 93440.0, "min_ns": 78766.0, "max_ns": 135139.0}
+{"n": 512, "t": 256, "k": 256, "stage": "signer_round1", "samples": 25, "mean_ns": 622768980.24, "median_ns": 622835793.0, "min_ns": 618379015.0, "max_ns": 629622406.0}
+{"n": 512, "t": 256, "k": 256, "stage": "signer_round2", "samples": 25, "mean_ns": 14530848.16, "median_ns": 14500591.0, "min_ns": 14271382.0, "max_ns": 14896065.0}

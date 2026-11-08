@@ -1,0 +1,48 @@
+{
+  "binary": "/home/arnav/Documents/HyThS/build/bench/protocol_bench",
+  "binary_sha256": "6894c0f181e2b9bb66cbf05d3c39ef41d034d766dee80eaf1c18fae6673aaefe",
+  "source_snapshot_sha256": "24523215aebdface1d77372f00bbab973760494ec07543079a9ddf38629abef2",
+  "git_head": "c0f961e9e814345750ca62a0ecbe81be658ca456",
+  "git_status": " M CMakeLists.txt\n M CMakePresets.json\n M README.md\n M bench/primitive_bench.cpp\n M docs/benchmarks/README.md\n M docs/phase-3-checklist.md\n M docs/phase-5-checklist.md\n M include/hta/signer.hpp\n M src/authorization.cpp\n M src/secp256k1_public.cpp\n M src/signer.cpp\n M tests/secp256k1_public_test.cpp\n?? bench/secp256k1_backend_compare.cpp\n?? benchmark.md\n?? docs/benchmarks/phase5-backend-public.jsonl\n?? docs/benchmarks/phase5-backend-public.md\n?? docs/benchmarks/phase5-fixed-base-20261108.jsonl\n?? docs/benchmarks/phase5-matrix-20261108/\n?? docs/benchmarks/phase5-matrix-extended-20261108/\n?? docs/benchmarks/phase5-matrix-large-threshold-20261108/\n?? tests/phase5_regression_test.cpp\n?? tests/verification_differential_test.cpp\n?? tools/run_fixed_base_bench.py\n?? tools/run_phase5_matrix.py\n?? tools/summarize_phase5_matrix.py\n",
+  "platform": "Linux-7.0.0-42-generic-x86_64-with-glibc2.39",
+  "cpu": "x86_64",
+  "launches": 5,
+  "iterations_per_sample": 1,
+  "samples_per_launch": 5,
+  "configs": [
+    [
+      512,
+      256,
+      256
+    ]
+  ],
+  "order_seed": 20261108,
+  "start_unix": 1794117140.2352586,
+  "note": "single-process sequential signer work; variable-time secrets",
+  "cmake_cache_sha256": "8ca6d10215d050799d17e0c7c1f8414e077b5c7b1eb6c476c8e31087f0c318a4",
+  "build_settings": [
+    "CMAKE_BUILD_TYPE:STRING=Release",
+    "CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++",
+    "CMAKE_CXX_FLAGS:STRING=",
+    "CMAKE_CXX_FLAGS_DEBUG:STRING=-g",
+    "CMAKE_CXX_FLAGS_MINSIZEREL:STRING=-Os -DNDEBUG",
+    "CMAKE_CXX_FLAGS_RELEASE:STRING=-O3 -DNDEBUG",
+    "CMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=-O2 -g -DNDEBUG",
+    "HTA_BATCH_VERIFY:BOOL=ON",
+    "HTA_BUILD_BENCH:BOOL=ON",
+    "HTA_GENERATOR_CACHE:BOOL=ON",
+    "HTA_INSTRUMENTATION:STRING=none",
+    "HTA_MSM_BUCKET_TUNING:BOOL=ON",
+    "HTA_OPCOUNTERS:BOOL=OFF",
+    "HTA_PUBLIC_FIXED_BASE:BOOL=ON",
+    "CMAKE_CXX_FLAGS-ADVANCED:INTERNAL=1",
+    "CMAKE_CXX_FLAGS_DEBUG-ADVANCED:INTERNAL=1",
+    "CMAKE_CXX_FLAGS_MINSIZEREL-ADVANCED:INTERNAL=1",
+    "CMAKE_CXX_FLAGS_RELEASE-ADVANCED:INTERNAL=1",
+    "CMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1",
+    "HTA_INSTRUMENTATION-STRINGS:INTERNAL=none;asan-ubsan;tsan;coverage;fuzz"
+  ],
+  "compiler_version": "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "tracked_diff_sha256": "3655cdf32d41cbd10e4278a6b5834d5c90870e6edafd25f23c07431b6afd52b7",
+  "cpu_model": "12th Gen Intel(R) Core(TM) i5-1240P"
+}

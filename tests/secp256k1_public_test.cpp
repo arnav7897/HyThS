@@ -47,5 +47,15 @@ int main() {
             return EXIT_FAILURE;
     if (hta::public_msm_with_bucket({g}, {one}, 1) || hta::public_msm_with_bucket({g}, {one}, 13))
         return EXIT_FAILURE;
+    // Cross-check full-width public scalars against ordinary point multiplication.
+    for (std::size_t i = 0; i < 32; ++i) {
+        PublicBytes scalar(32, 0);
+        scalar[i] = 0x7f;
+        scalar[(i + 13) % 32] = 0x81;
+        if (hta::public_generator_multiply(scalar) != hta::public_point_multiply(g, scalar))
+            return EXIT_FAILURE;
+    }
+    if (hta::public_generator_multiply(zero) != PublicBytes{0})
+        return EXIT_FAILURE;
     return EXIT_SUCCESS;
 }

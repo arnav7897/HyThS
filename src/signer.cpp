@@ -55,12 +55,51 @@ PublicBytes make_context(const PublicBytes &sid, const PublicBytes &digest, std:
 }
 } // namespace
 
-Signer::Signer(std::uint64_t index, SecretScalar secret_key, std::size_t max_used_sessions)
-    : index_(index), secret_key_(std::move(secret_key)), max_used_sessions_(max_used_sessions) {
+Signer::Signer(std::uint64_t index, SecretScalar secret_key, std::size_t max_used_sessions,
+               std::chrono::milliseconds session_timeout)
+    : index_(index), secret_key_(std::move(secret_key)), max_used_sessions_(max_used_sessions),
+      session_timeout_(session_timeout) {
     if (index_ == 0 || !secret_key_.valid())
         throw std::invalid_argument("invalid signer key");
     if (max_used_sessions_ == 0 || max_used_sessions_ > maximum_remembered_sessions)
         throw std::invalid_argument("invalid signer replay capacity");
+    if (session_timeout_ < std::chrono::milliseconds::zero() ||
+        session_timeout_ > std::chrono::hours(24 * 365))
+        throw std::invalid_argument("invalid signer session timeout");
+    if (session_timeout_ != std::chrono::milliseconds::zero()) {
+        timeout_worker_ = std::thread([this] {
+            std::unique_lock<std::mutex> lock(mutex_);
+            while (!stopping_) {
+                if (sessions_.empty()) {
+                    timeout_changed_.wait(lock);
+                    continue;
+                }
+                auto earliest = std::min_element(sessions_.begin(), sessions_.end(),
+                                                 [](const auto &a, const auto &b) {
+                                                     return a.second.expires < b.second.expires;
+                                                 });
+                const auto deadline = earliest->second.expires;
+                timeout_changed_.wait_until(lock, deadline);
+                const auto now = std::chrono::steady_clock::now();
+                for (auto it = sessions_.begin(); it != sessions_.end();) {
+                    if (it->second.expires <= now)
+                        it = sessions_.erase(it);
+                    else
+                        ++it;
+                }
+            }
+        });
+    }
+}
+
+Signer::~Signer() {
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        stopping_ = true;
+    }
+    timeout_changed_.notify_one();
+    if (timeout_worker_.joinable())
+        timeout_worker_.join();
 }
 
 std::optional<RoundOneCommitments> Signer::round1(const Roster &roster, const PublicBytes &sid,
@@ -93,13 +132,21 @@ std::optional<RoundOneCommitments> Signer::round1(const Roster &roster, const Pu
         RoundOneCommitments commitments{secret_generator_multiply(first_nonce),
                                         secret_generator_multiply(second_nonce)};
         auto context = make_context(sid, *digest, threshold, message, masked_key, subset);
-        sessions_.emplace(sid,
-                          Session{std::move(first_nonce), std::move(second_nonce),
-                                  std::move(context), *digest, masked_key, message, threshold});
+        sessions_.emplace(sid, Session{std::move(first_nonce), std::move(second_nonce),
+                                       std::move(context), *digest, masked_key, message, threshold,
+                                       session_timeout_ == std::chrono::milliseconds::zero()
+                                           ? std::chrono::steady_clock::time_point::max()
+                                           : std::chrono::steady_clock::now() + session_timeout_});
+        timeout_changed_.notify_one();
         return commitments;
     } catch (...) {
         return std::nullopt;
     }
+}
+
+bool Signer::cancel(const PublicBytes &sid) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return sessions_.erase(sid) != 0;
 }
 
 std::optional<PublicBytes> Signer::round2(const PublicBytes &sid,
@@ -111,6 +158,10 @@ std::optional<PublicBytes> Signer::round2(const PublicBytes &sid,
     auto it = sessions_.find(sid);
     if (it == sessions_.end())
         return std::nullopt;
+    if (std::chrono::steady_clock::now() >= it->second.expires) {
+        sessions_.erase(it);
+        return std::nullopt;
+    }
     auto session = std::move(it->second);
     sessions_.erase(it);
 

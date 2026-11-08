@@ -66,6 +66,9 @@ int main(int argc, char **argv) {
 
         measure("secp256k1_generator_mul", iterations,
                 [&] { return require(hta::public_generator_multiply(two)).size(); });
+        const Bytes full_width(32, 0x5a);
+        measure("secp256k1_generator_mul_full_width", iterations,
+                [&] { return require(hta::public_generator_multiply(full_width)).size(); });
         measure("secp256k1_variable_mul", iterations,
                 [&] { return require(hta::public_point_multiply(generator, two)).size(); });
         measure("secp256k1_hash_to_scalar", iterations, [&] {
