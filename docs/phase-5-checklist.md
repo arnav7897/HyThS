@@ -18,6 +18,7 @@ Research prototype only. Variable-time secret arithmetic, external generator-con
 - [x] Explicit signer cancellation and dropout/restart regression for 4-of-8, including replay and cancellation race.
 - [x] Apply the same 32,768-term batch limit in both verifier configurations.
 - [x] Optional signer timeout automatically erases expired live nonce state and retains spent IDs; caller configures the timeout. Automatic dropout detection and restart need a transport/orchestration layer.
+- [x] Bound aggregate active signer-session memory to 64 MiB, accounting for stored message/context copies and per-session overhead; cancellation, Round 2, and timeout expiry release the budget. Regression confirms capacity is recovered after cancellation.
 - [x] Switchable public-generator fixed-base table; secret-scalar operations remain on the existing variable-time path.
 - [x] Compare mcl and libsecp256k1 public generator and variable-point multiplication; see `docs/benchmarks/phase5-backend-public.md`. Full backend/MSM comparison remains open.
 - [x] Debug CTest 19/19 and Python tests 6/6 pass; the phase 5 regression and KAT also pass in the `bench-reference` build. Batch regression tests 40 valid, 40 with one invalid, and 41 signatures at `n=257`.
