@@ -132,8 +132,8 @@ bool active_session_memory_limit() {
         signer.round1(*roster, second_sid, 1, large_message, roster->public_keys[0], {1}) ||
         !signer.cancel(first_sid))
         return false;
-    const auto retried = signer.round1(*roster, second_sid, 1, large_message,
-                                       roster->public_keys[0], {1});
+    const auto retried =
+        signer.round1(*roster, second_sid, 1, large_message, roster->public_keys[0], {1});
     if (!retried || !signer.round2(second_sid, roster->public_keys[0], roster->public_keys[0]))
         return false;
     return signer.round1(*roster, third_sid, 1, large_message, roster->public_keys[0], {1}) &&
