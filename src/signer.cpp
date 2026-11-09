@@ -82,10 +82,12 @@ Signer::Signer(std::uint64_t index, SecretScalar secret_key, std::size_t max_use
                 timeout_changed_.wait_until(lock, deadline);
                 const auto now = std::chrono::steady_clock::now();
                 for (auto it = sessions_.begin(); it != sessions_.end();) {
-                    if (it->second.expires <= now)
+                    if (it->second.expires <= now) {
+                        active_session_bytes_ -= it->second.accounted_bytes;
                         it = sessions_.erase(it);
-                    else
+                    } else {
                         ++it;
+                    }
                 }
             }
         });
@@ -125,6 +127,11 @@ std::optional<RoundOneCommitments> Signer::round1(const Roster &roster, const Pu
     if (used_sessions_.find(sid) != used_sessions_.end() ||
         used_sessions_.size() >= max_used_sessions_)
         return std::nullopt;
+    // Account for stored message/context copies and per-session container overhead.
+    constexpr std::size_t session_overhead_budget = 4096;
+    const std::size_t accounted_bytes = session_overhead_budget + 2 * message.size();
+    if (accounted_bytes > maximum_active_session_bytes - active_session_bytes_)
+        return std::nullopt;
     used_sessions_.insert(sid);
     try {
         auto first_nonce = random_secret_scalar();
@@ -136,7 +143,9 @@ std::optional<RoundOneCommitments> Signer::round1(const Roster &roster, const Pu
                                        std::move(context), *digest, masked_key, message, threshold,
                                        session_timeout_ == std::chrono::milliseconds::zero()
                                            ? std::chrono::steady_clock::time_point::max()
-                                           : std::chrono::steady_clock::now() + session_timeout_});
+                                           : std::chrono::steady_clock::now() + session_timeout_,
+                                       accounted_bytes});
+        active_session_bytes_ += accounted_bytes;
         timeout_changed_.notify_one();
         return commitments;
     } catch (...) {
@@ -146,7 +155,12 @@ std::optional<RoundOneCommitments> Signer::round1(const Roster &roster, const Pu
 
 bool Signer::cancel(const PublicBytes &sid) {
     std::lock_guard<std::mutex> lock(mutex_);
-    return sessions_.erase(sid) != 0;
+    const auto it = sessions_.find(sid);
+    if (it == sessions_.end())
+        return false;
+    active_session_bytes_ -= it->second.accounted_bytes;
+    sessions_.erase(it);
+    return true;
 }
 
 std::optional<PublicBytes> Signer::round2(const PublicBytes &sid,
@@ -159,10 +173,12 @@ std::optional<PublicBytes> Signer::round2(const PublicBytes &sid,
     if (it == sessions_.end())
         return std::nullopt;
     if (std::chrono::steady_clock::now() >= it->second.expires) {
+        active_session_bytes_ -= it->second.accounted_bytes;
         sessions_.erase(it);
         return std::nullopt;
     }
     auto session = std::move(it->second);
+    active_session_bytes_ -= session.accounted_bytes;
     sessions_.erase(it);
 
     if (!valid_public_point(aggregate_first, false) || !valid_public_point(aggregate_second, false))

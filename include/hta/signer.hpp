@@ -24,6 +24,7 @@ struct RoundOneCommitments {
 class Signer final {
   public:
     static constexpr std::size_t maximum_remembered_sessions = 65536;
+    static constexpr std::size_t maximum_active_session_bytes = 64 * 1024 * 1024;
 
     // Nonzero timeout enables one cleanup thread per signer; zero disables automatic expiry.
     // Cleanup may wait for an in-flight signer operation; late Round 2 requests reject.
@@ -53,6 +54,7 @@ class Signer final {
         PublicBytes message;
         std::uint32_t threshold;
         std::chrono::steady_clock::time_point expires;
+        std::size_t accounted_bytes;
     };
 
     std::uint64_t index_;
@@ -65,5 +67,6 @@ class Signer final {
     std::thread timeout_worker_;
     std::set<PublicBytes> used_sessions_;
     std::map<PublicBytes, Session> sessions_;
+    std::size_t active_session_bytes_ = 0;
 };
 } // namespace hta

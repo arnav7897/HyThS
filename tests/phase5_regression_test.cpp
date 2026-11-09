@@ -121,6 +121,38 @@ bool automatic_timeout() {
            signer.round1(*roster, {'u'}, 1, {'m'}, roster->public_keys[0], {1}).has_value();
 }
 
+bool active_session_memory_limit() {
+    auto roster = roster_for(1);
+    if (!roster)
+        return false;
+    Signer signer(1, secret(1));
+    const PublicBytes large_message(16 * 1024 * 1024, 'm');
+    const PublicBytes first_sid{'a'}, second_sid{'b'}, third_sid{'c'};
+    if (!signer.round1(*roster, first_sid, 1, large_message, roster->public_keys[0], {1}) ||
+        signer.round1(*roster, second_sid, 1, large_message, roster->public_keys[0], {1}) ||
+        !signer.cancel(first_sid))
+        return false;
+    const auto retried =
+        signer.round1(*roster, second_sid, 1, large_message, roster->public_keys[0], {1});
+    if (!retried || !signer.round2(second_sid, roster->public_keys[0], roster->public_keys[0]))
+        return false;
+    return signer.round1(*roster, third_sid, 1, large_message, roster->public_keys[0], {1}) &&
+           signer.cancel(third_sid);
+}
+
+bool timeout_releases_memory() {
+    auto roster = roster_for(1);
+    if (!roster)
+        return false;
+    Signer signer(1, secret(1), 10, std::chrono::milliseconds(20));
+    const PublicBytes large_message(16 * 1024 * 1024, 'm');
+    if (!signer.round1(*roster, {'x'}, 1, large_message, roster->public_keys[0], {1}))
+        return false;
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    const auto next = signer.round1(*roster, {'y'}, 1, large_message, roster->public_keys[0], {1});
+    return next.has_value() && signer.cancel({'y'});
+}
+
 bool large_surplus() {
     auto roster = roster_for(257);
     if (!roster)
@@ -181,7 +213,8 @@ bool large_surplus() {
 } // namespace
 
 int main() {
-    return dropout_restart() && cancellation_race() && automatic_timeout() && large_surplus()
+    return dropout_restart() && cancellation_race() && automatic_timeout() &&
+                   active_session_memory_limit() && timeout_releases_memory() && large_surplus()
                ? EXIT_SUCCESS
                : EXIT_FAILURE;
 }
