@@ -87,6 +87,23 @@ bool run_case(unsigned n, unsigned threshold, unsigned count) {
     };
     if (!compare(*decoded, message, true) || !compare(valid, {'x'}, false))
         return false;
+    for (const std::size_t size : std::array<std::size_t, 7>{{1, 2, 4, 8, 16, 32, 64}}) {
+        const std::vector<FinalSignature> batch(size, valid);
+        const std::vector<PublicBytes> batch_messages(size, message);
+        if (!batch_verify_signatures(*roster, context, threshold, batch_messages, batch))
+            return false;
+        for (const auto index : {std::size_t{0}, size / 2, size - 1}) {
+            auto invalid_batch = batch;
+            invalid_batch[index].schnorr.response.back() ^= 1;
+            if (batch_verify_signatures(*roster, context, threshold, batch_messages,
+                                        invalid_batch))
+                return false;
+        }
+    }
+    if (batch_verify_signatures(*roster, context, threshold,
+                                std::vector<PublicBytes>(65, message),
+                                std::vector<FinalSignature>(65, valid)))
+        return false;
     for (unsigned field = 0; field < 11; ++field) {
         auto altered = valid;
         PublicBytes *value = nullptr;
@@ -141,12 +158,17 @@ bool run_case(unsigned n, unsigned threshold, unsigned count) {
     }
     auto wrong_size = valid;
     wrong_size.authorization.vL.pop_back();
+    auto empty_point = valid;
+    empty_point.authorization.A.clear();
+    auto malformed_scalar = valid;
+    malformed_scalar.authorization.vR[0].assign(32, 0xff);
     auto noncanonical = valid;
     noncanonical.schnorr.response.assign(32, 0xff);
     auto identity = valid;
     identity.schnorr.nonce = {0};
     const auto other_threshold = threshold == n ? threshold - 1 : threshold + 1;
-    return compare(wrong_size, message, false) && compare(noncanonical, message, false) &&
+    return compare(wrong_size, message, false) && compare(empty_point, message, false) &&
+           compare(malformed_scalar, message, false) && compare(noncanonical, message, false) &&
            compare(identity, message, false) &&
            !verify_signature(*roster, context, other_threshold, message, valid) &&
            !batch_verify_signatures(*roster, context, other_threshold, {message}, {valid}) &&

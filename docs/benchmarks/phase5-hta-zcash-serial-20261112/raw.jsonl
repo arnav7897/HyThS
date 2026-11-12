@@ -1,0 +1,60 @@
+{"n": 64, "threshold": 32, "signers": 32, "stage": "registration_and_roster", "iterations_per_sample": 1, "samples_ns": [23775070, 14021063, 13289983, 14694443, 13833183], "median_ns_per_op": 14021063, "launch": 1}
+{"n": 64, "threshold": 32, "signers": 32, "stage": "signer_round1", "iterations_per_sample": 1, "samples_ns": [25124631, 24982634, 24109384, 24647696, 24545375], "median_ns_per_op": 24647696, "launch": 1}
+{"n": 64, "threshold": 32, "signers": 32, "stage": "aggregate_commitments", "iterations_per_sample": 1, "samples_ns": [1909789, 1939699, 1959552, 1932914, 1952849], "median_ns_per_op": 1939699, "launch": 1}
+{"n": 64, "threshold": 32, "signers": 32, "stage": "signer_round2", "iterations_per_sample": 1, "samples_ns": [3473948, 3467075, 3493812, 3466210, 3564004], "median_ns_per_op": 3473948, "launch": 1}
+{"n": 64, "threshold": 32, "signers": 32, "stage": "partial_verify_shares", "iterations_per_sample": 1, "samples_ns": [6023237, 5891244, 5898026, 5770315, 5912324], "median_ns_per_op": 5898026, "launch": 1}
+{"n": 64, "threshold": 32, "signers": 32, "stage": "aggregate_responses", "iterations_per_sample": 1, "samples_ns": [107437, 104946, 105314, 104089, 104905], "median_ns_per_op": 104946, "launch": 1}
+{"n": 64, "threshold": 32, "signers": 32, "stage": "authorization_prove", "iterations_per_sample": 1, "samples_ns": [14273298, 14647946, 14827631, 14680677, 14511551], "median_ns_per_op": 14647946, "launch": 1}
+{"n": 64, "threshold": 32, "signers": 32, "stage": "full_verify", "iterations_per_sample": 1, "samples_ns": [7693409, 8159174, 7775489, 8285976, 7701058], "median_ns_per_op": 7775489, "launch": 1}
+{"n": 64, "threshold": 32, "signers": 32, "stage": "serialize", "iterations_per_sample": 1, "samples_ns": [95370, 98415, 93125, 103908, 99347], "median_ns_per_op": 98415, "launch": 1}
+{"n": 64, "threshold": 32, "signers": 32, "stage": "batch_verify_reference", "iterations_per_sample": 1, "samples_ns": [8284481, 7717625, 7733062, 7679985, 8360424], "median_ns_per_op": 7733062, "launch": 1}
+{"n": 64, "threshold": 32, "signers": 32, "stage": "batch_verify", "iterations_per_sample": 1, "samples_ns": [6989722, 7171380, 6889880, 7546213, 7057830], "median_ns_per_op": 7057830, "launch": 1}
+{"n": 64, "threshold": 32, "signers": 32, "stage": "serialized_signature_size", "output_bytes": 5833, "launch": 1}
+{"n": 4, "threshold": 2, "signers": 2, "stage": "registration_and_roster", "iterations_per_sample": 1, "samples_ns": [1059086, 822807, 806706, 808583, 803512], "median_ns_per_op": 808583, "launch": 1}
+{"n": 4, "threshold": 2, "signers": 2, "stage": "signer_round1", "iterations_per_sample": 1, "samples_ns": [423465, 846974, 409611, 491557, 650164], "median_ns_per_op": 491557, "launch": 1}
+{"n": 4, "threshold": 2, "signers": 2, "stage": "aggregate_commitments", "iterations_per_sample": 1, "samples_ns": [236665, 240076, 210324, 238334, 262512], "median_ns_per_op": 238334, "launch": 1}
+{"n": 4, "threshold": 2, "signers": 2, "stage": "signer_round2", "iterations_per_sample": 1, "samples_ns": [223984, 260099, 220528, 262176, 287362], "median_ns_per_op": 260099, "launch": 1}
+{"n": 4, "threshold": 2, "signers": 2, "stage": "partial_verify_shares", "iterations_per_sample": 1, "samples_ns": [392882, 417636, 376919, 433141, 495579], "median_ns_per_op": 417636, "launch": 1}
+{"n": 4, "threshold": 2, "signers": 2, "stage": "aggregate_responses", "iterations_per_sample": 1, "samples_ns": [103324, 133304, 99338, 110759, 117533], "median_ns_per_op": 110759, "launch": 1}
+{"n": 4, "threshold": 2, "signers": 2, "stage": "authorization_prove", "iterations_per_sample": 1, "samples_ns": [1939055, 2470140, 1941987, 2123342, 2284303], "median_ns_per_op": 2123342, "launch": 1}
+{"n": 4, "threshold": 2, "signers": 2, "stage": "full_verify", "iterations_per_sample": 1, "samples_ns": [1379363, 1422049, 5873680, 1417952, 1456389], "median_ns_per_op": 1422049, "launch": 1}
+{"n": 4, "threshold": 2, "signers": 2, "stage": "serialize", "iterations_per_sample": 1, "samples_ns": [92053, 76512, 355361, 77205, 73981], "median_ns_per_op": 77205, "launch": 1}
+{"n": 4, "threshold": 2, "signers": 2, "stage": "batch_verify_reference", "iterations_per_sample": 1, "samples_ns": [2487305, 1343808, 2160995, 1615697, 1336138], "median_ns_per_op": 1615697, "launch": 1}
+{"n": 4, "threshold": 2, "signers": 2, "stage": "batch_verify", "iterations_per_sample": 1, "samples_ns": [1736743, 1222809, 1858730, 2610888, 1243919], "median_ns_per_op": 1736743, "launch": 1}
+{"n": 4, "threshold": 2, "signers": 2, "stage": "serialized_signature_size", "output_bytes": 1097, "launch": 1}
+{"n": 2, "threshold": 2, "signers": 2, "stage": "registration_and_roster", "iterations_per_sample": 1, "samples_ns": [753341, 486432, 514662, 652721, 1291317], "median_ns_per_op": 652721, "launch": 1}
+{"n": 2, "threshold": 2, "signers": 2, "stage": "signer_round1", "iterations_per_sample": 1, "samples_ns": [390989, 1319301, 412331, 451122, 570660], "median_ns_per_op": 451122, "launch": 1}
+{"n": 2, "threshold": 2, "signers": 2, "stage": "aggregate_commitments", "iterations_per_sample": 1, "samples_ns": [205788, 449312, 223360, 258170, 323834], "median_ns_per_op": 258170, "launch": 1}
+{"n": 2, "threshold": 2, "signers": 2, "stage": "signer_round2", "iterations_per_sample": 1, "samples_ns": [218831, 458971, 253342, 268490, 343162], "median_ns_per_op": 268490, "launch": 1}
+{"n": 2, "threshold": 2, "signers": 2, "stage": "partial_verify_shares", "iterations_per_sample": 1, "samples_ns": [377398, 823165, 447098, 478657, 631073], "median_ns_per_op": 478657, "launch": 1}
+{"n": 2, "threshold": 2, "signers": 2, "stage": "aggregate_responses", "iterations_per_sample": 1, "samples_ns": [117237, 146011, 132731, 150033, 159127], "median_ns_per_op": 146011, "launch": 1}
+{"n": 2, "threshold": 2, "signers": 2, "stage": "authorization_prove", "iterations_per_sample": 1, "samples_ns": [1617688, 1629227, 1782649, 1590168, 2889985], "median_ns_per_op": 1629227, "launch": 1}
+{"n": 2, "threshold": 2, "signers": 2, "stage": "full_verify", "iterations_per_sample": 1, "samples_ns": [1040162, 1133284, 2324773, 1245511, 2971687], "median_ns_per_op": 1245511, "launch": 1}
+{"n": 2, "threshold": 2, "signers": 2, "stage": "serialize", "iterations_per_sample": 1, "samples_ns": [64981, 72799, 162672, 81724, 169634], "median_ns_per_op": 81724, "launch": 1}
+{"n": 2, "threshold": 2, "signers": 2, "stage": "batch_verify_reference", "iterations_per_sample": 1, "samples_ns": [1846042, 1096780, 1405785, 1740920, 1876966], "median_ns_per_op": 1740920, "launch": 1}
+{"n": 2, "threshold": 2, "signers": 2, "stage": "batch_verify", "iterations_per_sample": 1, "samples_ns": [2875379, 995984, 1300387, 1421538, 1623624], "median_ns_per_op": 1421538, "launch": 1}
+{"n": 2, "threshold": 2, "signers": 2, "stage": "serialized_signature_size", "output_bytes": 875, "launch": 1}
+{"n": 32, "threshold": 16, "signers": 16, "stage": "registration_and_roster", "iterations_per_sample": 1, "samples_ns": [10882991, 14265610, 9658342, 9248580, 11890015], "median_ns_per_op": 10882991, "launch": 1}
+{"n": 32, "threshold": 16, "signers": 16, "stage": "signer_round1", "iterations_per_sample": 1, "samples_ns": [7496192, 7520535, 7904121, 7381133, 7443846], "median_ns_per_op": 7496192, "launch": 1}
+{"n": 32, "threshold": 16, "signers": 16, "stage": "aggregate_commitments", "iterations_per_sample": 1, "samples_ns": [1032790, 1032274, 1039648, 1038385, 1089277], "median_ns_per_op": 1038385, "launch": 1}
+{"n": 32, "threshold": 16, "signers": 16, "stage": "signer_round2", "iterations_per_sample": 1, "samples_ns": [1738512, 1749466, 1728009, 1749987, 1752020], "median_ns_per_op": 1749466, "launch": 1}
+{"n": 32, "threshold": 16, "signers": 16, "stage": "partial_verify_shares", "iterations_per_sample": 1, "samples_ns": [2940797, 2944441, 2914927, 3792993, 3002219], "median_ns_per_op": 2944441, "launch": 1}
+{"n": 32, "threshold": 16, "signers": 16, "stage": "aggregate_responses", "iterations_per_sample": 1, "samples_ns": [98891, 112094, 100369, 175044, 105921], "median_ns_per_op": 105921, "launch": 1}
+{"n": 32, "threshold": 16, "signers": 16, "stage": "authorization_prove", "iterations_per_sample": 1, "samples_ns": [8505654, 8450935, 8290569, 8399912, 8147176], "median_ns_per_op": 8399912, "launch": 1}
+{"n": 32, "threshold": 16, "signers": 16, "stage": "full_verify", "iterations_per_sample": 1, "samples_ns": [4850146, 4590051, 4538355, 4637459, 4645139], "median_ns_per_op": 4637459, "launch": 1}
+{"n": 32, "threshold": 16, "signers": 16, "stage": "serialize", "iterations_per_sample": 1, "samples_ns": [91248, 93755, 83376, 87287, 89887], "median_ns_per_op": 89887, "launch": 1}
+{"n": 32, "threshold": 16, "signers": 16, "stage": "batch_verify_reference", "iterations_per_sample": 1, "samples_ns": [4562255, 4504677, 4572592, 5106778, 4589188], "median_ns_per_op": 4572592, "launch": 1}
+{"n": 32, "threshold": 16, "signers": 16, "stage": "batch_verify", "iterations_per_sample": 1, "samples_ns": [4034888, 4273866, 4083617, 4156407, 3959268], "median_ns_per_op": 4083617, "launch": 1}
+{"n": 32, "threshold": 16, "signers": 16, "stage": "serialized_signature_size", "output_bytes": 3391, "launch": 1}
+{"n": 8, "threshold": 4, "signers": 4, "stage": "registration_and_roster", "iterations_per_sample": 1, "samples_ns": [2166057, 1636895, 1676566, 1631215, 1681238], "median_ns_per_op": 1676566, "launch": 1}
+{"n": 8, "threshold": 4, "signers": 4, "stage": "signer_round1", "iterations_per_sample": 1, "samples_ns": [1441327, 2628006, 1088814, 2444969, 1177348], "median_ns_per_op": 1441327, "launch": 1}
+{"n": 8, "threshold": 4, "signers": 4, "stage": "aggregate_commitments", "iterations_per_sample": 1, "samples_ns": [459106, 762987, 341413, 571531, 355194], "median_ns_per_op": 459106, "launch": 1}
+{"n": 8, "threshold": 4, "signers": 4, "stage": "signer_round2", "iterations_per_sample": 1, "samples_ns": [728003, 1013599, 448392, 494358, 444117], "median_ns_per_op": 494358, "launch": 1}
+{"n": 8, "threshold": 4, "signers": 4, "stage": "partial_verify_shares", "iterations_per_sample": 1, "samples_ns": [1210317, 1300037, 800571, 1019734, 781360], "median_ns_per_op": 1019734, "launch": 1}
+{"n": 8, "threshold": 4, "signers": 4, "stage": "aggregate_responses", "iterations_per_sample": 1, "samples_ns": [161932, 165653, 100525, 132635, 131964], "median_ns_per_op": 132635, "launch": 1}
+{"n": 8, "threshold": 4, "signers": 4, "stage": "authorization_prove", "iterations_per_sample": 1, "samples_ns": [6619317, 4720216, 3070554, 3199332, 2960353], "median_ns_per_op": 3199332, "launch": 1}
+{"n": 8, "threshold": 4, "signers": 4, "stage": "full_verify", "iterations_per_sample": 1, "samples_ns": [3769570, 2706905, 1864787, 1849400, 2029124], "median_ns_per_op": 2029124, "launch": 1}
+{"n": 8, "threshold": 4, "signers": 4, "stage": "serialize", "iterations_per_sample": 1, "samples_ns": [168109, 101769, 74659, 77932, 103054], "median_ns_per_op": 101769, "launch": 1}
+{"n": 8, "threshold": 4, "signers": 4, "stage": "batch_verify_reference", "iterations_per_sample": 1, "samples_ns": [3734870, 2923489, 1808389, 1826699, 1911177], "median_ns_per_op": 1911177, "launch": 1}
+{"n": 8, "threshold": 4, "signers": 4, "stage": "batch_verify", "iterations_per_sample": 1, "samples_ns": [4722023, 2299114, 1749079, 1697678, 1726613], "median_ns_per_op": 1749079, "launch": 1}
+{"n": 8, "threshold": 4, "signers": 4, "stage": "serialized_signature_size", "output_bytes": 1467, "launch": 1}

@@ -1,0 +1,10 @@
+{"aggregate_ns": 1075749, "dealer_ns": 725984, "k": 2, "key_validation_ns": 656029, "n": 2, "round1_ns": 401261, "round2_ns": 827923, "signature_bytes": 65, "t": 2, "verify_ns": 518290}
+{"aggregate_ns": 322128, "dealer_ns": 556273, "k": 2, "key_validation_ns": 665728, "n": 4, "round1_ns": 229604, "round2_ns": 309247, "signature_bytes": 65, "t": 2, "verify_ns": 175487}
+{"aggregate_ns": 374036, "dealer_ns": 1235627, "k": 4, "key_validation_ns": 2356096, "n": 8, "round1_ns": 481906, "round2_ns": 848482, "signature_bytes": 65, "t": 4, "verify_ns": 173079}
+{"aggregate_ns": 506370, "dealer_ns": 3395432, "k": 16, "key_validation_ns": 32280945, "n": 32, "round1_ns": 1322074, "round2_ns": 6110628, "signature_bytes": 65, "t": 16, "verify_ns": 126068}
+{"aggregate_ns": 660369, "dealer_ns": 7930490, "k": 32, "key_validation_ns": 88551693, "n": 64, "round1_ns": 2148414, "round2_ns": 17423583, "signature_bytes": 65, "t": 32, "verify_ns": 125390}
+{"aggregate_ns": 1178679, "dealer_ns": 36812072, "k": 64, "key_validation_ns": 286469915, "n": 128, "round1_ns": 4477972, "round2_ns": 68037586, "signature_bytes": 65, "t": 64, "verify_ns": 107440}
+{"aggregate_ns": 2288549, "dealer_ns": 24987371, "k": 128, "key_validation_ns": 1099588827, "n": 256, "round1_ns": 8441818, "round2_ns": 273557738, "signature_bytes": 65, "t": 128, "verify_ns": 111399}
+{"aggregate_ns": 4453814, "dealer_ns": 72107332, "k": 256, "key_validation_ns": 4231808592, "n": 512, "round1_ns": 17200205, "round2_ns": 1082816601, "signature_bytes": 65, "t": 256, "verify_ns": 100886}
+{"aggregate_ns": 10650913, "dealer_ns": 99487039, "k": 512, "key_validation_ns": 19582086972, "n": 1024, "round1_ns": 42732531, "round2_ns": 5377283343, "signature_bytes": 65, "t": 512, "verify_ns": 124661}
+{"aggregate_ns": 37836480, "dealer_ns": 397606143, "k": 1024, "key_validation_ns": 86140413724, "n": 2048, "round1_ns": 86784932, "round2_ns": 32534246965, "signature_bytes": 65, "t": 1024, "verify_ns": 234854}

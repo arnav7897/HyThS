@@ -21,3 +21,19 @@ LD_LIBRARY_PATH=/tmp/hyths-secp/usr/lib/x86_64-linux-gnu /tmp/hyths-backend-comp
 ```
 
 Repeat the executable five times for five independent process launches. The executable checks backend equality before producing each run's timing samples and exits nonzero on mismatch.
+
+
+## Repeated MSM component comparison — 2026-11-09
+
+Five independent launches, five samples per operation/launch; sample loops use 1,000 calls for single operations and 1,000, 250, 62, or 15 calls for MSM sizes 1, 4, 16, or 64. Means/medians are microseconds per MSM call, computed across 25 timed samples.
+
+| Operation | mcl mean / median | libsecp256k1 mean / median |
+|---|---:|---:|
+| Generator multiply | 18.18 / 17.25 | 34.84 / 34.43 |
+| Variable-point multiply | 61.79 / 60.17 | 57.13 / 56.46 |
+| MSM 1 | 57.84 / 54.66 | 61.90 / 60.90 |
+| MSM 4 | 143.34 / 139.98 | 230.77 / 224.16 |
+| MSM 16 | 464.55 / 442.47 | 979.69 / 907.61 |
+| MSM 64 | 1850.22 / 1743.37 | 3534.39 / 3446.64 |
+
+Each MSM result is checked against mcl's HTA public MSM result. libsecp256k1's public API path computes each scalar multiplication and combines public keys; it is not a native general MSM implementation. Raw data: [`phase5-backend-public-msm-20261109.jsonl`](phase5-backend-public-msm-20261109.jsonl). These are public component measurements, not a drop-in full-protocol backend comparison. Host/compiler and timing caveats above continue to apply.
