@@ -2,6 +2,7 @@
 
 #include <secp256k1.h>
 
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cstdint>
@@ -49,6 +50,25 @@ Bytes native_point(const secp256k1_context *ctx, const Bytes &input, const Bytes
     return serialize(ctx, point);
 }
 
+Bytes native_msm(const secp256k1_context *ctx, const std::vector<Bytes> &points,
+                 const std::vector<Bytes> &scalars) {
+    if (points.empty() || points.size() != scalars.size())
+        throw std::invalid_argument("invalid MSM inputs");
+    std::vector<secp256k1_pubkey> products(points.size());
+    std::vector<const secp256k1_pubkey *> product_ptrs;
+    product_ptrs.reserve(points.size());
+    for (std::size_t i = 0; i < points.size(); ++i) {
+        if (!secp256k1_ec_pubkey_parse(ctx, &products[i], points[i].data(), points[i].size()) ||
+            !secp256k1_ec_pubkey_tweak_mul(ctx, &products[i], scalars[i].data()))
+            throw std::runtime_error("libsecp256k1 MSM term failed");
+        product_ptrs.push_back(&products[i]);
+    }
+    secp256k1_pubkey sum;
+    if (!secp256k1_ec_pubkey_combine(ctx, &sum, product_ptrs.data(), product_ptrs.size()))
+        throw std::runtime_error("libsecp256k1 MSM aggregation failed");
+    return serialize(ctx, sum);
+}
+
 template <typename Op>
 void measure(const char *backend, const char *operation, unsigned iterations, Op fn) {
     for (unsigned i = 0; i < 32; ++i)
@@ -92,6 +112,24 @@ int main(int argc, char **argv) {
         });
         measure("libsecp256k1", "variable_mul", iterations,
                 [&](unsigned i) { return native_point(ctx, base, scalar(i + 1)); });
+        for (const unsigned terms : {1U, 4U, 16U, 64U}) {
+            std::vector<Bytes> points, scalars;
+            points.reserve(terms);
+            scalars.reserve(terms);
+            for (unsigned i = 0; i < terms; ++i) {
+                points.push_back(native_generator(ctx, scalar(i + 11)));
+                scalars.push_back(scalar(i + 101));
+            }
+            const auto expected = hta::public_msm(points, scalars);
+            if (!expected || *expected != native_msm(ctx, points, scalars))
+                throw std::runtime_error("backend MSM mismatch");
+            const auto calls = std::max(1U, static_cast<unsigned>(iterations) / terms);
+            const auto operation = std::string("msm_k") + std::to_string(terms);
+            measure("mcl", operation.c_str(), calls,
+                    [&](unsigned) { return hta::public_msm(points, scalars).value(); });
+            measure("libsecp256k1", operation.c_str(), calls,
+                    [&](unsigned) { return native_msm(ctx, points, scalars); });
+        }
         secp256k1_context_destroy(ctx);
         return EXIT_SUCCESS;
     } catch (const std::exception &error) {

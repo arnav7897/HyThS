@@ -38,6 +38,6 @@ cmake --build --preset bench-reference --target protocol_bench -j2
 - [`primitive-prototype.md`](primitive-prototype.md): Phase 2 primitive benchmark notes.
 
 All timings are variable-time prototype measurements. They are not security evidence. See the [Phase 5 checklist](../phase-5-checklist.md) for unfinished optimization work.
-## Phase 5 repeated measurements
+## Current comparative benchmark
 
-The [benchmark plan](../../benchmark.md#7-preliminary-measurements-2026-11-08) links the 2026-11-08 protocol matrix, public fixed-base ablation, source snapshot, and mcl/libsecp256k1 primitive comparison. These are exploratory measurements on one host, with variable-time secret operations.
+The compact report in [benchmark.md](../../benchmark.md) lists HTA features, FROST and hinTS source details, time/space complexity, and measured timing/optimization tables. It distinguishes the complete FROST run and published hinTS results from the partial hinTS proof-code pilot. Raw artifacts use `phase5-*-20261109` names.

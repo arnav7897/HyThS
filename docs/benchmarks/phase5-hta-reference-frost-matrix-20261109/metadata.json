@@ -1,0 +1,68 @@
+{
+  "binary": "/home/arnav/Documents/HyThS/build/bench-reference/protocol_bench",
+  "binary_sha256": "12552e13affe9b62e94273e139fb70b0d8d53f49276105abbe7e5fd414686bdc",
+  "source_snapshot_sha256": "ac1eb921929d683b3037534db437d90b672c294c0945968b0b7edb5eb27cc52f",
+  "git_head": "eb9bd5d178d6a7cfdf6a067bd7b246bf81c702d8",
+  "git_status": " M bench/secp256k1_backend_compare.cpp\n M tests/verification_differential_test.cpp\n?? bench/frost-baseline/\n?? docs/benchmarks/phase5-backend-public-msm-20261109.jsonl\n?? docs/benchmarks/phase5-frost-20261109-n8.jsonl\n?? docs/benchmarks/phase5-frost-matrix-20261109.jsonl\n?? docs/benchmarks/phase5-hints-20261109.jsonl\n?? docs/benchmarks/phase5-hta-frost-match-20261109/\n?? docs/benchmarks/phase5-hta-frost-matrix-20261109/\n?? docs/benchmarks/phase5-hta-reference-frost-matrix-20261109/\n?? tools/run_backend_compare.py\n?? tools/run_frost_baseline.py\n",
+  "platform": "Linux-7.0.0-42-generic-x86_64-with-glibc2.39",
+  "cpu": "x86_64",
+  "launches": 5,
+  "iterations_per_sample": 5,
+  "samples_per_launch": 5,
+  "configs": [
+    [
+      8,
+      4,
+      4
+    ],
+    [
+      8,
+      4,
+      5
+    ],
+    [
+      16,
+      8,
+      8
+    ],
+    [
+      32,
+      16,
+      16
+    ],
+    [
+      64,
+      32,
+      32
+    ]
+  ],
+  "order_seed": 20261108,
+  "start_unix": 1794210308.3564432,
+  "note": "single-process sequential signer work; variable-time secrets",
+  "cmake_cache_sha256": "864180f3efafc01f2c1a5c169877ab01887c8691e69fcff3ee204e326fc2a27d",
+  "build_settings": [
+    "CMAKE_BUILD_TYPE:STRING=Release",
+    "CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++",
+    "CMAKE_CXX_FLAGS:STRING=",
+    "CMAKE_CXX_FLAGS_DEBUG:STRING=-g",
+    "CMAKE_CXX_FLAGS_MINSIZEREL:STRING=-Os -DNDEBUG",
+    "CMAKE_CXX_FLAGS_RELEASE:STRING=-O3 -DNDEBUG",
+    "CMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=-O2 -g -DNDEBUG",
+    "HTA_BATCH_VERIFY:BOOL=OFF",
+    "HTA_BUILD_BENCH:BOOL=ON",
+    "HTA_GENERATOR_CACHE:BOOL=OFF",
+    "HTA_INSTRUMENTATION:STRING=none",
+    "HTA_MSM_BUCKET_TUNING:BOOL=OFF",
+    "HTA_OPCOUNTERS:BOOL=OFF",
+    "HTA_PUBLIC_FIXED_BASE:BOOL=OFF",
+    "CMAKE_CXX_FLAGS-ADVANCED:INTERNAL=1",
+    "CMAKE_CXX_FLAGS_DEBUG-ADVANCED:INTERNAL=1",
+    "CMAKE_CXX_FLAGS_MINSIZEREL-ADVANCED:INTERNAL=1",
+    "CMAKE_CXX_FLAGS_RELEASE-ADVANCED:INTERNAL=1",
+    "CMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1",
+    "HTA_INSTRUMENTATION-STRINGS:INTERNAL=none;asan-ubsan;tsan;coverage;fuzz"
+  ],
+  "compiler_version": "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "tracked_diff_sha256": "00f16884a38fd39301df16ee717383713415e017349ed8febca1fea30326dfec",
+  "cpu_model": "12th Gen Intel(R) Core(TM) i5-1240P"
+}

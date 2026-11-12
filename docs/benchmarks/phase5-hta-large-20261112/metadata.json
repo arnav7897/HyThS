@@ -1,0 +1,68 @@
+{
+  "binary": "/home/arnav/Documents/HyThS/build/bench/protocol_bench",
+  "binary_sha256": "c8f6281e4956ffa293124ec6e9ff62be500f10e05e31274e67951c42bf30aacf",
+  "source_snapshot_sha256": "2914a2f4fb7c4502fd770b87ee3b065d2fbe827829c588f2469dc3cc2ff496cd",
+  "git_head": "d4145fd47591e7e010acf0c5b9bfdc0ce37224af",
+  "git_status": " M CMakeLists.txt\n M README.md\n M bench/secp256k1_backend_compare.cpp\n M docs/benchmarks/README.md\n M docs/benchmarks/phase5-backend-public.md\n M docs/phase-5-checklist.md\n M tests/verification_differential_test.cpp\n?? bench/frost-baseline/\n?? bench/proof_base_table_eval.cpp\n?? docs/benchmarks/phase5-backend-public-msm-20261109.jsonl\n?? docs/benchmarks/phase5-frost-20261109-n8.jsonl\n?? docs/benchmarks/phase5-frost-matrix-20261109.jsonl\n?? docs/benchmarks/phase5-hints-20261109.jsonl\n?? docs/benchmarks/phase5-hta-frost-match-20261109/\n?? docs/benchmarks/phase5-hta-frost-matrix-20261109/\n?? docs/benchmarks/phase5-hta-large-20261112/\n?? docs/benchmarks/phase5-hta-reference-frost-matrix-20261109/\n?? docs/benchmarks/phase5-proof-base-table-20261109.jsonl\n?? tools/run_backend_compare.py\n?? tools/run_frost_baseline.py\n",
+  "platform": "Linux-7.0.0-42-generic-x86_64-with-glibc2.39",
+  "cpu": "x86_64",
+  "launches": 1,
+  "iterations_per_sample": 1,
+  "samples_per_launch": 5,
+  "configs": [
+    [
+      128,
+      64,
+      64
+    ],
+    [
+      256,
+      128,
+      128
+    ],
+    [
+      512,
+      256,
+      256
+    ],
+    [
+      1024,
+      512,
+      512
+    ],
+    [
+      2048,
+      1024,
+      1024
+    ]
+  ],
+  "order_seed": 20261108,
+  "start_unix": 1794463789.562612,
+  "note": "single-process sequential signer work; variable-time secrets",
+  "cmake_cache_sha256": "8ca6d10215d050799d17e0c7c1f8414e077b5c7b1eb6c476c8e31087f0c318a4",
+  "build_settings": [
+    "CMAKE_BUILD_TYPE:STRING=Release",
+    "CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++",
+    "CMAKE_CXX_FLAGS:STRING=",
+    "CMAKE_CXX_FLAGS_DEBUG:STRING=-g",
+    "CMAKE_CXX_FLAGS_MINSIZEREL:STRING=-Os -DNDEBUG",
+    "CMAKE_CXX_FLAGS_RELEASE:STRING=-O3 -DNDEBUG",
+    "CMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=-O2 -g -DNDEBUG",
+    "HTA_BATCH_VERIFY:BOOL=ON",
+    "HTA_BUILD_BENCH:BOOL=ON",
+    "HTA_GENERATOR_CACHE:BOOL=ON",
+    "HTA_INSTRUMENTATION:STRING=none",
+    "HTA_MSM_BUCKET_TUNING:BOOL=ON",
+    "HTA_OPCOUNTERS:BOOL=OFF",
+    "HTA_PUBLIC_FIXED_BASE:BOOL=ON",
+    "CMAKE_CXX_FLAGS-ADVANCED:INTERNAL=1",
+    "CMAKE_CXX_FLAGS_DEBUG-ADVANCED:INTERNAL=1",
+    "CMAKE_CXX_FLAGS_MINSIZEREL-ADVANCED:INTERNAL=1",
+    "CMAKE_CXX_FLAGS_RELEASE-ADVANCED:INTERNAL=1",
+    "CMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1",
+    "HTA_INSTRUMENTATION-STRINGS:INTERNAL=none;asan-ubsan;tsan;coverage;fuzz"
+  ],
+  "compiler_version": "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "tracked_diff_sha256": "f2efd1701673087342234cb7fcdb49207e2c6462a3457d3f8bc770fc9ee31d91",
+  "cpu_model": "12th Gen Intel(R) Core(TM) i5-1240P"
+}

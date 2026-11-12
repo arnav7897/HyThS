@@ -228,4 +228,8 @@ if(HTA_BUILD_BENCH)
                                                  hta_hash_to_curve)
   add_executable(protocol_bench bench/protocol_bench.cpp)
   target_link_libraries(protocol_bench PRIVATE hta_protocol_encoding)
+  add_executable(proof_base_table_eval bench/proof_base_table_eval.cpp)
+  target_link_libraries(proof_base_table_eval PRIVATE hta_generator_derivation
+                                                       hta_secp256k1_public hta_parameters
+                                                       mcl::mcl_st)
 endif()
