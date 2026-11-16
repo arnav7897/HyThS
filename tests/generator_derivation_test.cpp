@@ -19,7 +19,7 @@ int main() {
         return EXIT_FAILURE;
 
     for (const auto params :
-         {std::pair<std::uint32_t, std::uint32_t>{0, 1}, {4, 0}, {4, 10}, {65553, 1}}) {
+         {std::pair<std::uint32_t, std::uint32_t>{0, 1}, {4, 0}, {4, 12}, {131073, 1}}) {
         try {
             (void)hta::derive_generator_secp256k1(context, params.first, params.second);
             return EXIT_FAILURE;
@@ -31,8 +31,9 @@ int main() {
                                      0x55, 0xa0, 0x62, 0x95, 0xce, 0x87, 0x0b, 0x07, 0x02,
                                      0x9b, 0xfc, 0xdb, 0x2d, 0xce, 0x28, 0xd9, 0x59, 0xf2,
                                      0x81, 0x5b, 0x16, 0xf8, 0x17, 0x98};
-    const hta::PublicBytes dst{'H', 'T', 'A', '-', 'v', '1', '-', 's', 'e', 'c', 'p',
-                               '2', '5', '6', 'k', '1', '-', 'H', 'g', 'e', 'n'};
+    const hta::PublicBytes dst{'H', 'T', 'A', '-', 'a', 's', 'i', 'a', 'c', 'c', 's', '2', '7',
+                               '-', 'v', '1', '-', 's', 'e', 'c', 'p', '2', '5', '6', 'k', '1',
+                               '-', 'H', 'g', 'e', 'n'};
     unsigned int calls = 0;
     hta::PublicBytes original_input, retry_input;
     const auto retried = hta::testing::derive_generator_with_hash(

@@ -20,19 +20,38 @@ struct SchnorrSignature {
     PublicBytes response;
 };
 
+// Optional research instrumentation; clock reads are skipped when the caller passes nullptr.
+struct ProofTimings {
+    std::uint64_t total_ns = 0;
+    std::uint64_t commitments_ns = 0;
+    std::uint64_t other_proof_ns = 0;
+    std::vector<std::uint64_t> folding_round_ns;
+};
+
+struct VerificationTimings {
+    std::uint64_t authorization_ns = 0;
+    std::uint64_t v1_ns = 0;
+    std::uint64_t folding_scalars_ns = 0;
+    std::uint64_t v2_msm_ns = 0;
+    std::uint64_t schnorr_equation_ns = 0;
+    std::uint64_t full_signature_ns = 0;
+};
+
 // Single-process research coordinator. mcl secret operations are variable-time. The caller must
 // authenticate the roster digest.
 class CoordinatorSession final {
   public:
     static std::optional<CoordinatorSession>
     begin(const Roster &roster, const PublicBytes &sid, std::uint32_t threshold,
-          const PublicBytes &message, std::vector<std::uint64_t> subset, SecretScalar tweak);
+          const PublicBytes &message, std::vector<std::uint64_t> subset, SecretScalar tweak,
+          const PublicBytes &generator_context, std::uint32_t r, ProofTimings *timings = nullptr);
 
     CoordinatorSession(const CoordinatorSession &) = delete;
     CoordinatorSession &operator=(const CoordinatorSession &) = delete;
     CoordinatorSession(CoordinatorSession &&) noexcept = default;
     CoordinatorSession &operator=(CoordinatorSession &&) noexcept = default;
 
+    const PublicBytes &certificate() const noexcept { return certificate_; }
     const PublicBytes &masked_key() const noexcept { return masked_key_; }
     std::optional<AggregateCommitments>
     collect_commitments(const std::map<std::uint64_t, RoundOneCommitments> &commitments);
@@ -46,9 +65,10 @@ class CoordinatorSession final {
     CoordinatorSession(PublicBytes digest, std::vector<PublicBytes> roster_keys,
                        std::uint32_t threshold, PublicBytes message,
                        std::vector<std::uint64_t> subset, PublicBytes masked_key,
-                       SecretScalar tweak, PublicBytes context);
+                       SecretScalar tweak, PublicBytes context, PublicBytes certificate);
     void close() noexcept;
 
+    PublicBytes certificate_;
     PublicBytes digest_;
     std::vector<PublicBytes> roster_keys_;
     std::uint32_t threshold_;

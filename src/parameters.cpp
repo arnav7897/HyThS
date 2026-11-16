@@ -7,8 +7,12 @@ std::optional<Dimensions> dimensions(std::uint32_t n, std::uint32_t threshold) n
     std::uint32_t ell = 0;
     for (auto value = n; value != 0; value >>= 1)
         ++ell;
-    const auto N = n + ell + 1;
-    // For n <= 65535, secp256k1's 256-bit order exceeds every bound in equation (2).
-    return Dimensions{ell, N, 2 * N + 1};
+    std::uint32_t kappa = 0;
+    for (auto value = n + ell - 1; value != 0; value >>= 1)
+        ++kappa;
+    const std::uint32_t N = std::uint32_t{1} << kappa;
+    // The n bound gives kappa <= 17, so all dimension arithmetic fits uint32_t.
+    // secp256k1's order exceeds max(N + 1, n + 2^ell - 1, 3), equation (3.2).
+    return Dimensions{ell, N, 2 * N + 3, kappa};
 }
 } // namespace hta

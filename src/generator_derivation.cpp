@@ -15,7 +15,7 @@ std::vector<std::uint8_t> framed_bytes(const std::vector<std::uint8_t> &value) {
 
 std::vector<std::uint8_t> generator_input(const PublicBytes &context, std::uint32_t N,
                                           std::uint32_t index) {
-    const std::string suite = "HTA-secp256k1-v1";
+    const std::string suite = "HTA-secp256k1-asiaccs27-v1";
     const PublicBytes suite_bytes(suite.begin(), suite.end());
     return transcript("GEN", {framed_bytes(suite_bytes), framed_bytes(context), frame_integer(N),
                               frame_integer(index)});
@@ -25,9 +25,9 @@ template <typename Hash>
 PublicBytes derive_with_hash(const PublicBytes &context, std::uint32_t N, std::uint32_t index,
                              const PublicBytes &dst, Hash &&hash,
                              std::uint64_t first_retry_counter) {
-    constexpr std::uint32_t max_N = 65552;
+    constexpr std::uint32_t max_N = 131072;
     constexpr std::size_t max_context_bytes = 1024 * 1024;
-    if (N == 0 || N > max_N || index == 0 || index > 2 * N + 1 ||
+    if (N == 0 || N > max_N || index == 0 || index > 2 * N + 3 ||
         context.size() > max_context_bytes)
         throw std::invalid_argument("invalid generator derivation parameters");
     const auto original = generator_input(context, N, index);
@@ -47,8 +47,8 @@ PublicBytes derive_with_hash(const PublicBytes &context, std::uint32_t N, std::u
 
 PublicBytes derive_generator_secp256k1(const PublicBytes &context, std::uint32_t N,
                                        std::uint32_t index) {
-    static const PublicBytes dst{'H', 'T', 'A', '-', 'v', '1', '-', 's', 'e', 'c', 'p',
-                                 '2', '5', '6', 'k', '1', '-', 'H', 'g', 'e', 'n'};
+    static const std::string domain = "HTA-asiaccs27-v1-secp256k1-Hgen";
+    const PublicBytes dst(domain.begin(), domain.end());
     const auto hash = [](const PublicBytes &message, const PublicBytes &domain) {
         return hash_to_curve_secp256k1(message, domain);
     };
@@ -58,8 +58,8 @@ PublicBytes derive_generator_secp256k1(const PublicBytes &context, std::uint32_t
 PublicBytes testing::derive_generator_with_hash(const PublicBytes &context, std::uint32_t N,
                                                 std::uint32_t index, const GeneratorHash &hash,
                                                 std::uint64_t first_retry_counter) {
-    static const PublicBytes dst{'H', 'T', 'A', '-', 'v', '1', '-', 's', 'e', 'c', 'p',
-                                 '2', '5', '6', 'k', '1', '-', 'H', 'g', 'e', 'n'};
+    static const std::string domain = "HTA-asiaccs27-v1-secp256k1-Hgen";
+    const PublicBytes dst(domain.begin(), domain.end());
     return derive_with_hash(context, N, index, dst, hash, first_retry_counter);
 }
 } // namespace hta

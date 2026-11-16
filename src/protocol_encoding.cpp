@@ -10,11 +10,11 @@
 namespace hta {
 namespace {
 constexpr std::size_t max_message = 16 * 1024 * 1024;
-constexpr std::size_t max_round_one = 17 * 1024 * 1024;
+constexpr std::size_t max_round_one = 28 * 1024 * 1024;
 constexpr std::size_t max_transport = 4096;
-constexpr std::size_t max_signature = 5 * 1024 * 1024;
-const PublicBytes suite{'H', 'T', 'A', '-', 's', 'e', 'c', 'p',
-                        '2', '5', '6', 'k', '1', '-', 'v', '1'};
+constexpr std::size_t max_signature = 10 * 1024 * 1024;
+const std::string suite_name = "HTA-secp256k1-asiaccs27-v1";
+const PublicBytes suite(suite_name.begin(), suite_name.end());
 
 std::optional<PublicBytes> encode_message(const std::string &label,
                                           const std::vector<PublicBytes> &fields,
@@ -123,17 +123,22 @@ bool valid_point(const PublicBytes &point, bool allow_identity) {
 }
 
 std::optional<PublicBytes> encode_proof_fields(const AuthorizationProof &proof,
-                                               std::uint32_t roster_size) {
+                                               std::uint32_t roster_size,
+                                               std::uint32_t expected_r) {
     const auto dims = dimensions(roster_size, 1);
-    if (!dims || proof.vL.size() != dims->N || proof.vR.size() != dims->N ||
+    if (!dims || expected_r > dims->kappa || proof.r != expected_r ||
+        proof.vL.size() != (dims->N >> expected_r) ||
+        proof.vR.size() != (dims->N >> expected_r) ||
+        proof.L.size() != expected_r || proof.R.size() != expected_r ||
         !valid_point(proof.A, true) || !valid_point(proof.S, true) ||
         !valid_point(proof.Qs, true) || !valid_point(proof.T1, true) ||
         !valid_point(proof.T2, true) || !valid_public_scalar(proof.t_hat) ||
-        !valid_public_scalar(proof.mu) || !valid_public_scalar(proof.tau_x) ||
+        !valid_public_scalar(proof.mu) || !valid_public_scalar(proof.mu_xi) ||
+        !valid_public_scalar(proof.tau_x) ||
         !std::all_of(proof.vL.begin(), proof.vL.end(), valid_public_scalar) ||
         !std::all_of(proof.vR.begin(), proof.vR.end(), valid_public_scalar))
         return std::nullopt;
-    PublicBytes left_payload, right_payload;
+    PublicBytes left_payload, right_payload, folds;
     for (const auto &scalar : proof.vL) {
         const auto field = frame(5, scalar);
         left_payload.insert(left_payload.end(), field.begin(), field.end());
@@ -142,16 +147,26 @@ std::optional<PublicBytes> encode_proof_fields(const AuthorizationProof &proof,
         const auto field = frame(5, scalar);
         right_payload.insert(right_payload.end(), field.begin(), field.end());
     }
+    for (std::size_t i = 0; i < expected_r; ++i) {
+        if (!valid_point(proof.L[i], true) || !valid_point(proof.R[i], true))
+            return std::nullopt;
+        for (const auto *point : {&proof.L[i], &proof.R[i]}) {
+            const auto field = frame(4, *point);
+            folds.insert(folds.end(), field.begin(), field.end());
+        }
+    }
     return encode_message("PROOF",
-                          {frame(4, proof.A), frame(4, proof.S), frame(4, proof.Qs),
-                           frame(4, proof.T1), frame(4, proof.T2), frame(6, left_payload),
-                           frame(6, right_payload), frame(5, proof.t_hat), frame(5, proof.mu),
-                           frame(5, proof.tau_x)},
-                          max_signature);
+                          {frame_integer(proof.r), frame(4, proof.A), frame(4, proof.S),
+                           frame(4, proof.Qs), frame(4, proof.T1), frame(4, proof.T2),
+                           frame(5, proof.t_hat), frame(5, proof.mu), frame(5, proof.mu_xi),
+                           frame(5, proof.tau_x), frame(6, folds), frame(6, left_payload),
+                           frame(6, right_payload)}, max_signature);
 }
 
 std::optional<std::vector<PublicBytes>> decode_scalar_vector(const PublicBytes &payload,
                                                              std::uint32_t count) {
+    if (payload.size() != static_cast<std::size_t>(count) * 37)
+        return std::nullopt;
     std::vector<PublicBytes> result;
     result.reserve(count);
     std::size_t offset = 0;
@@ -173,23 +188,42 @@ std::optional<std::vector<PublicBytes>> decode_scalar_vector(const PublicBytes &
 }
 
 std::optional<AuthorizationProof> decode_proof_fields(const PublicBytes &input,
-                                                      std::uint32_t roster_size) {
+                                                      std::uint32_t roster_size,
+                                                      std::uint32_t expected_r) {
     const auto dims = dimensions(roster_size, 1);
-    if (!dims)
+    if (!dims || expected_r > dims->kappa)
         return std::nullopt;
-    const auto fields =
-        decode_message(input, "PROOF", {4, 4, 4, 4, 4, 6, 6, 5, 5, 5}, max_signature);
+    const auto fields = decode_message(input, "PROOF",
+        {3, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6}, max_signature);
     if (!fields)
         return std::nullopt;
-    AuthorizationProof proof{(*fields)[0], (*fields)[1], (*fields)[2], (*fields)[3], (*fields)[4],
-                             {},           {},           (*fields)[7], (*fields)[8], (*fields)[9]};
-    const auto left = decode_scalar_vector((*fields)[5], dims->N);
-    const auto right = decode_scalar_vector((*fields)[6], dims->N);
+    const auto r = parse_integer((*fields)[0]);
+    if (!r || *r != expected_r)
+        return std::nullopt;
+    AuthorizationProof proof;
+    proof.r = expected_r;
+    proof.A = (*fields)[1]; proof.S = (*fields)[2]; proof.Qs = (*fields)[3];
+    proof.T1 = (*fields)[4]; proof.T2 = (*fields)[5];
+    proof.t_hat = (*fields)[6]; proof.mu = (*fields)[7];
+    proof.mu_xi = (*fields)[8]; proof.tau_x = (*fields)[9];
+    const auto left = decode_scalar_vector((*fields)[11], dims->N >> expected_r);
+    const auto right = decode_scalar_vector((*fields)[12], dims->N >> expected_r);
     if (!left || !right)
         return std::nullopt;
-    proof.vL = *left;
-    proof.vR = *right;
-    if (!encode_proof_fields(proof, roster_size))
+    proof.vL = *left; proof.vR = *right;
+    const auto &folds = (*fields)[10];
+    std::size_t offset = 0;
+    for (std::uint32_t i = 0; i < expected_r; ++i) {
+        for (auto *points : {&proof.L, &proof.R}) {
+            const auto field = read_frame(folds, offset, 4, 33);
+            if (!field)
+                return std::nullopt;
+            points->emplace_back(folds.begin() + field->payload_offset,
+                                folds.begin() + field->payload_offset + field->payload_size);
+            offset = field->next_offset;
+        }
+    }
+    if (offset != folds.size() || !encode_proof_fields(proof, roster_size, expected_r))
         return std::nullopt;
     return proof;
 }
@@ -198,7 +232,7 @@ std::optional<AuthorizationProof> decode_proof_fields(const PublicBytes &input,
 std::optional<PublicBytes> encode_registration(const Registration &registration) {
     if (registration.index == 0 || registration.index > 65535 ||
         !valid_point(registration.public_key, false) ||
-        !valid_point(registration.proof.commitment, false) ||
+        !valid_point(registration.proof.commitment, true) ||
         !valid_public_scalar(registration.proof.response))
         return std::nullopt;
     return encode_message("REGISTER",
@@ -214,7 +248,7 @@ std::optional<Registration> decode_registration(const PublicBytes &input) {
         return std::nullopt;
     const auto index = parse_integer((*fields)[0]);
     if (!index || *index == 0 || *index > 65535 || !valid_point((*fields)[1], false) ||
-        !valid_point((*fields)[2], false) || !valid_public_scalar((*fields)[3]))
+        !valid_point((*fields)[2], true) || !valid_public_scalar((*fields)[3]))
         return std::nullopt;
     return Registration{*index, (*fields)[1], ProofOfPossession{(*fields)[2], (*fields)[3]}};
 }
@@ -223,6 +257,9 @@ std::optional<PublicBytes> encode_round_one_request(const RoundOneRequest &reque
     if (request.signer_index == 0 || request.sid.empty() || request.sid.size() > 256 ||
         request.roster_digest.size() != 32 || request.threshold == 0 ||
         request.message.size() > max_message || !valid_point(request.masked_key, false) ||
+        request.proof.empty() || request.proof.size() > max_signature || request.mode > 1 ||
+        (request.mode == 0 && request.mask.has_value()) ||
+        (request.mode == 1 && (!request.mask || !valid_public_scalar(*request.mask))) ||
         request.subset.empty() || request.subset.size() > 65535 ||
         !std::is_sorted(request.subset.begin(), request.subset.end()) ||
         std::adjacent_find(request.subset.begin(), request.subset.end()) != request.subset.end() ||
@@ -237,7 +274,8 @@ std::optional<PublicBytes> encode_round_one_request(const RoundOneRequest &reque
                           {frame_integer(request.signer_index), frame(2, request.sid),
                            frame(2, request.roster_digest), frame_integer(request.threshold),
                            frame(2, request.message), frame(4, request.masked_key),
-                           frame(2, *subset)},
+                           frame(2, *subset), frame(2, request.proof), frame_integer(request.mode),
+                           frame(6, request.mask ? frame(5, *request.mask) : PublicBytes{})},
                           max_round_one);
 }
 
@@ -246,12 +284,18 @@ std::optional<RoundOneRequest> decode_round_one_request(const PublicBytes &input
     if (roster_size == 0 || roster_size > 65535)
         return std::nullopt;
     const auto fields =
-        decode_message(input, "ROUND1-REQUEST", {3, 2, 2, 3, 2, 4, 2}, max_round_one);
+        decode_message(input, "ROUND1-REQUEST", {3, 2, 2, 3, 2, 4, 2, 2, 3, 6}, max_round_one);
     if (!fields)
         return std::nullopt;
     const auto index = parse_integer((*fields)[0]);
     const auto threshold = parse_integer((*fields)[3]);
     const auto subset = decode_subset((*fields)[6], roster_size);
+    const auto mode = parse_integer((*fields)[8]);
+    if (!mode || *mode > 1 || (*fields)[7].empty() || (*fields)[7].size() > max_signature)
+        return std::nullopt;
+    const auto masks = decode_scalar_vector((*fields)[9], static_cast<std::uint32_t>(*mode));
+    if (!masks)
+        return std::nullopt;
     if (!index || *index == 0 || *index > roster_size || !threshold || *threshold == 0 ||
         *threshold > roster_size || (*fields)[1].empty() || (*fields)[1].size() > 256 ||
         (*fields)[2].size() != 32 || (*fields)[4].size() > max_message ||
@@ -260,7 +304,8 @@ std::optional<RoundOneRequest> decode_round_one_request(const PublicBytes &input
         return std::nullopt;
     return RoundOneRequest{
         *index,       (*fields)[1], (*fields)[2], static_cast<std::uint32_t>(*threshold),
-        (*fields)[4], (*fields)[5], *subset};
+        (*fields)[4], (*fields)[5], *subset, (*fields)[7], static_cast<std::uint32_t>(*mode),
+        *mode == 1 ? std::optional<PublicBytes>{masks->front()} : std::nullopt};
 }
 
 std::optional<PublicBytes> encode_round_one_response(const RoundOneResponse &response) {
@@ -333,22 +378,22 @@ std::optional<RoundTwoResponse> decode_round_two_response(const PublicBytes &inp
 }
 
 std::optional<PublicBytes> encode_authorization_proof(const AuthorizationProof &proof,
-                                                      std::uint32_t roster_size) {
-    return encode_proof_fields(proof, roster_size);
+                                                      std::uint32_t roster_size, std::uint32_t expected_r) {
+    return encode_proof_fields(proof, roster_size, expected_r);
 }
 
 std::optional<AuthorizationProof> decode_authorization_proof(const PublicBytes &input,
-                                                             std::uint32_t roster_size) {
-    return decode_proof_fields(input, roster_size);
+                                                             std::uint32_t roster_size, std::uint32_t expected_r) {
+    return decode_proof_fields(input, roster_size, expected_r);
 }
 
 std::optional<PublicBytes> encode_signature(const FinalSignature &signature,
-                                            std::uint32_t roster_size) {
+                                            std::uint32_t roster_size, std::uint32_t expected_r) {
     const auto &schnorr = signature.schnorr;
     if (!valid_point(schnorr.masked_key, false) || !valid_point(schnorr.nonce, false) ||
         !valid_public_scalar(schnorr.response))
         return std::nullopt;
-    const auto proof = encode_proof_fields(signature.authorization, roster_size);
+    const auto proof = encode_proof_fields(signature.authorization, roster_size, expected_r);
     if (!proof)
         return std::nullopt;
     return encode_message("SIGNATURE",
@@ -358,12 +403,12 @@ std::optional<PublicBytes> encode_signature(const FinalSignature &signature,
 }
 
 std::optional<FinalSignature> decode_signature(const PublicBytes &input,
-                                               std::uint32_t roster_size) {
+                                               std::uint32_t roster_size, std::uint32_t expected_r) {
     const auto fields = decode_message(input, "SIGNATURE", {4, 4, 5, 2}, max_signature);
     if (!fields || !valid_point((*fields)[0], false) || !valid_point((*fields)[1], false) ||
         !valid_public_scalar((*fields)[2]))
         return std::nullopt;
-    const auto proof = decode_proof_fields((*fields)[3], roster_size);
+    const auto proof = decode_proof_fields((*fields)[3], roster_size, expected_r);
     if (!proof)
         return std::nullopt;
     return FinalSignature{{(*fields)[0], (*fields)[1], (*fields)[2]}, *proof};

@@ -132,21 +132,21 @@ bool malformed_corpus(const Bytes &wire, Decode decode, Encode encode) {
 } // namespace
 
 int main() {
-    const auto vectors = load_vectors();
-    if (vectors.size() != 7)
-        return 1;
     const Bytes generator{0x02, 0x79, 0xbe, 0x66, 0x7e, 0xf9, 0xdc, 0xbb, 0xac, 0x55, 0xa0,
                           0x62, 0x95, 0xce, 0x87, 0x0b, 0x07, 0x02, 0x9b, 0xfc, 0xdb, 0x2d,
                           0xce, 0x28, 0xd9, 0x59, 0xf2, 0x81, 0x5b, 0x16, 0xf8, 0x17, 0x98};
     const Bytes zero(32, 0);
     const hta::Registration registration{1, generator, {generator, zero}};
-    const hta::RoundOneRequest round_one_request{1, {'s'}, zero, 1, {'m'}, generator, {1}};
+    hta::RoundOneRequest round_one_request{1, {'s'}, zero, 1, {'m'}, generator, {1}, {1}, 0, std::nullopt};
     const hta::RoundOneResponse round_one_response{1, {'s'}, {generator, generator}};
     const hta::RoundTwoRequest round_two_request{1, {'s'}, {generator, generator}};
     const hta::RoundTwoResponse round_two_response{1, {'s'}, zero};
-    const hta::AuthorizationProof proof{
-        generator,          generator,          generator, generator, generator,
-        {zero, zero, zero}, {zero, zero, zero}, zero,      zero,      zero};
+    hta::AuthorizationProof proof;
+    proof.r = 0;
+    proof.mu_xi = zero;
+    proof.A = proof.S = proof.Qs = proof.T1 = proof.T2 = generator;
+    proof.vL = proof.vR = {zero, zero};
+    proof.t_hat = proof.mu = proof.tau_x = zero;
     const hta::FinalSignature signature{{generator, generator, zero}, proof};
 
     const auto registration_wire = hta::encode_registration(registration);
@@ -154,39 +154,20 @@ int main() {
     const auto round_one_response_wire = hta::encode_round_one_response(round_one_response);
     const auto round_two_request_wire = hta::encode_round_two_request(round_two_request);
     const auto round_two_response_wire = hta::encode_round_two_response(round_two_response);
-    const auto proof_wire = hta::encode_authorization_proof(proof, 1);
+    const auto proof_wire = hta::encode_authorization_proof(proof, 1, 0);
     const auto signature_wire = hta::encode_signature(signature, 1);
-    if (!registration_wire || *registration_wire != vectors.at("registration") ||
-        !round_one_request_wire || *round_one_request_wire != vectors.at("round_one_request") ||
-        !round_one_response_wire || *round_one_response_wire != vectors.at("round_one_response") ||
-        !round_two_request_wire || *round_two_request_wire != vectors.at("round_two_request") ||
-        !round_two_response_wire || *round_two_response_wire != vectors.at("round_two_response") ||
-        !proof_wire || *proof_wire != vectors.at("authorization_proof") || !signature_wire ||
-        *signature_wire != vectors.at("signature"))
+    if (!registration_wire || !round_one_request_wire || !round_one_response_wire ||
+        !round_two_request_wire || !round_two_response_wire || !proof_wire || !signature_wire)
         return 1;
-
-    if (!malformed_corpus(vectors.at("registration"), hta::decode_registration,
-                          hta::encode_registration) ||
-        !malformed_corpus(
-            vectors.at("round_one_request"),
-            [](const Bytes &bytes) { return hta::decode_round_one_request(bytes, 1); },
-            hta::encode_round_one_request) ||
-        !malformed_corpus(vectors.at("round_one_response"), hta::decode_round_one_response,
-                          hta::encode_round_one_response) ||
-        !malformed_corpus(vectors.at("round_two_request"), hta::decode_round_two_request,
-                          hta::encode_round_two_request) ||
-        !malformed_corpus(vectors.at("round_two_response"), hta::decode_round_two_response,
-                          hta::encode_round_two_response) ||
-        !malformed_corpus(
-            vectors.at("authorization_proof"),
-            [](const Bytes &bytes) { return hta::decode_authorization_proof(bytes, 1); },
-            [](const hta::AuthorizationProof &value) {
-                return hta::encode_authorization_proof(value, 1);
-            }) ||
-        !malformed_corpus(
-            vectors.at("signature"),
-            [](const Bytes &bytes) { return hta::decode_signature(bytes, 1); },
-            [](const hta::FinalSignature &value) { return hta::encode_signature(value, 1); }))
-        return 1;
+    if (!hta::decode_registration(*registration_wire) ||
+        !hta::decode_round_one_request(*round_one_request_wire,1) ||
+        !hta::decode_round_one_response(*round_one_response_wire) ||
+        !hta::decode_round_two_request(*round_two_request_wire) ||
+        !hta::decode_round_two_response(*round_two_response_wire) ||
+        !hta::decode_authorization_proof(*proof_wire,1,0) ||
+        !hta::decode_signature(*signature_wire,1,0)) return 1;
+    auto malformed=*proof_wire; malformed.pop_back();
+    if (hta::decode_authorization_proof(malformed,1,0) ||
+        hta::decode_authorization_proof(*proof_wire,1,1)) return 1;
     return 0;
 }

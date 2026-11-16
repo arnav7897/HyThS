@@ -11,6 +11,9 @@ struct RoundOneRequest {
     PublicBytes message;
     PublicBytes masked_key;
     std::vector<std::uint64_t> subset;
+    PublicBytes proof;
+    std::uint32_t mode = 0;
+    std::optional<PublicBytes> mask;
 };
 
 struct RoundOneResponse {
@@ -44,10 +47,10 @@ std::optional<PublicBytes> encode_round_two_response(const RoundTwoResponse &res
 std::optional<RoundTwoResponse> decode_round_two_response(const PublicBytes &input);
 
 std::optional<PublicBytes> encode_authorization_proof(const AuthorizationProof &proof,
-                                                      std::uint32_t roster_size);
+                                                      std::uint32_t roster_size, std::uint32_t expected_r = 0);
 std::optional<AuthorizationProof> decode_authorization_proof(const PublicBytes &input,
-                                                             std::uint32_t roster_size);
+                                                             std::uint32_t roster_size, std::uint32_t expected_r = 0);
 std::optional<PublicBytes> encode_signature(const FinalSignature &signature,
-                                            std::uint32_t roster_size);
-std::optional<FinalSignature> decode_signature(const PublicBytes &input, std::uint32_t roster_size);
+                                            std::uint32_t roster_size, std::uint32_t expected_r = 0);
+std::optional<FinalSignature> decode_signature(const PublicBytes &input, std::uint32_t roster_size, std::uint32_t expected_r = 0);
 } // namespace hta

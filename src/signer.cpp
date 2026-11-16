@@ -1,6 +1,9 @@
 #include "hta/signer.hpp"
 
 #include "hta/framing.hpp"
+#include "hta/authorization.hpp"
+#include "hta/protocol_encoding.hpp"
+#include "hta/parameters.hpp"
 #include "hta/scalar_challenge.hpp"
 #include "hta/secret_group.hpp"
 
@@ -42,7 +45,8 @@ std::optional<PublicBytes> roster_context_digest(const Roster &roster) {
 
 PublicBytes make_context(const PublicBytes &sid, const PublicBytes &digest, std::uint32_t threshold,
                          const PublicBytes &message, const PublicBytes &masked_key,
-                         const std::vector<std::uint64_t> &subset) {
+                         const std::vector<std::uint64_t> &subset,
+                         const PublicBytes &certificate) {
     PublicBytes subset_payload;
     for (const auto index : subset) {
         const auto encoded = frame_integer(index);
@@ -51,7 +55,7 @@ PublicBytes make_context(const PublicBytes &sid, const PublicBytes &digest, std:
     const auto subset_transcript = transcript("SUBSET", {frame(6, subset_payload)});
     return transcript("CTX",
                       {frame(2, sid), frame(2, digest), frame_integer(threshold), frame(2, message),
-                       point_field(masked_key), frame(2, subset_transcript)});
+                       point_field(masked_key), frame(2, subset_transcript), frame(2, certificate)});
 }
 } // namespace
 
@@ -108,7 +112,15 @@ std::optional<RoundOneCommitments> Signer::round1(const Roster &roster, const Pu
                                                   std::uint32_t threshold,
                                                   const PublicBytes &message,
                                                   const PublicBytes &masked_key,
-                                                  const std::vector<std::uint64_t> &subset) {
+                                                  const std::vector<std::uint64_t> &subset,
+                                                  const PublicBytes &generator_context,
+                                                  const PublicBytes &certificate, std::uint32_t r,
+                                                  std::uint32_t mode, const PublicBytes &mask,
+                                                  SignerTimings *timings) {
+    const auto total_start = timings ? std::chrono::steady_clock::now()
+                                     : std::chrono::steady_clock::time_point{};
+    if (timings)
+        *timings = {};
     if (sid.empty() || sid.size() > 256 || message.size() > maximum_message ||
         roster.public_keys.empty() || roster.public_keys.size() > 65535 || threshold == 0 ||
         threshold > roster.public_keys.size() || subset.size() < threshold || subset.empty() ||
@@ -123,30 +135,70 @@ std::optional<RoundOneCommitments> Signer::round1(const Roster &roster, const Pu
         secret_generator_multiply(secret_key_) != roster.public_keys[index_ - 1])
         return std::nullopt;
 
+    if (certificate.size() > 10 * 1024 * 1024 || mode > 1 ||
+        (mode == 0 && !mask.empty()) || (mode == 1 && !valid_public_scalar(mask)))
+        return std::nullopt;
+    const auto certificate_start = timings ? std::chrono::steady_clock::now()
+                                           : std::chrono::steady_clock::time_point{};
+    const auto proof = decode_authorization_proof(
+        certificate, static_cast<std::uint32_t>(roster.public_keys.size()), r);
+    if (!proof || !verify_authorization(roster, generator_context, threshold, message,
+                                        masked_key, *proof, r))
+        return std::nullopt;
+    if (timings)
+        timings->certificate_verify_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::steady_clock::now() - certificate_start).count();
+    const auto linkage_start = timings ? std::chrono::steady_clock::now()
+                                       : std::chrono::steady_clock::time_point{};
+    if (mode == 1) {
+        auto linked = public_generator_multiply(mask);
+        if (!linked)
+            return std::nullopt;
+        for (const auto index : subset) {
+            linked = public_point_add(*linked, roster.public_keys[index - 1]);
+            if (!linked)
+                return std::nullopt;
+        }
+        if (*linked != masked_key)
+            return std::nullopt;
+    }
+    if (timings)
+        timings->mask_linkage_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::steady_clock::now() - linkage_start).count();
+    auto context = make_context(sid, *digest, threshold, message, masked_key, subset, certificate);
+
     std::lock_guard<std::mutex> lock(mutex_);
     if (used_sessions_.find(sid) != used_sessions_.end() ||
         used_sessions_.size() >= max_used_sessions_)
         return std::nullopt;
     // Account for stored message/context copies and per-session container overhead.
     constexpr std::size_t session_overhead_budget = 4096;
-    const std::size_t accounted_bytes = session_overhead_budget + 2 * message.size();
+    const std::size_t accounted_bytes = session_overhead_budget + context.size() +
+                                         message.size() + certificate.size();
     if (accounted_bytes > maximum_active_session_bytes - active_session_bytes_)
         return std::nullopt;
     used_sessions_.insert(sid);
     try {
+        const auto nonce_start = timings ? std::chrono::steady_clock::now()
+                                         : std::chrono::steady_clock::time_point{};
         auto first_nonce = random_secret_scalar();
         auto second_nonce = random_secret_scalar();
         RoundOneCommitments commitments{secret_generator_multiply(first_nonce),
                                         secret_generator_multiply(second_nonce)};
-        auto context = make_context(sid, *digest, threshold, message, masked_key, subset);
         sessions_.emplace(sid, Session{std::move(first_nonce), std::move(second_nonce),
-                                       std::move(context), *digest, masked_key, message, threshold,
+                                       std::move(context), *digest, masked_key, message, certificate, threshold,
                                        session_timeout_ == std::chrono::milliseconds::zero()
                                            ? std::chrono::steady_clock::time_point::max()
                                            : std::chrono::steady_clock::now() + session_timeout_,
                                        accounted_bytes});
         active_session_bytes_ += accounted_bytes;
         timeout_changed_.notify_one();
+        if (timings) {
+            timings->nonce_generation_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::steady_clock::now() - nonce_start).count();
+            timings->round1_total_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::steady_clock::now() - total_start).count();
+        }
         return commitments;
     } catch (...) {
         return std::nullopt;
@@ -165,7 +217,10 @@ bool Signer::cancel(const PublicBytes &sid) {
 
 std::optional<PublicBytes> Signer::round2(const PublicBytes &sid,
                                           const PublicBytes &aggregate_first,
-                                          const PublicBytes &aggregate_second) {
+                                          const PublicBytes &aggregate_second,
+                                          SignerTimings *timings) {
+    const auto total_start = timings ? std::chrono::steady_clock::now()
+                                     : std::chrono::steady_clock::time_point{};
     if (sid.empty() || sid.size() > 256)
         return std::nullopt;
     std::lock_guard<std::mutex> lock(mutex_);
@@ -201,12 +256,16 @@ std::optional<PublicBytes> Signer::round2(const PublicBytes &sid,
             return std::nullopt;
         const std::vector<PublicBytes> challenge_fields{
             frame(2, session.roster_digest), point_field(session.masked_key),
-            frame_integer(session.threshold), point_field(*nonce_point), frame(2, session.message)};
+            frame_integer(session.threshold), point_field(*nonce_point), frame(2, session.message),
+            frame(2, session.certificate)};
         const auto challenge_transcript = transcript("SIG", challenge_fields);
         const auto challenge = scalar_challenge(challenge_transcript, false);
         const auto challenge_scalar = SecretScalar::from_canonical(challenge);
         auto key_product = secret_scalar_multiply(challenge_scalar, secret_key_);
         auto response = secret_scalar_add(nonce, key_product);
+        if (timings)
+            timings->round2_total_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::steady_clock::now() - total_start).count();
         return PublicBytes(response.bytes().begin(), response.bytes().end());
     } catch (...) {
         return std::nullopt;

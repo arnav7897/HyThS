@@ -68,7 +68,7 @@ Registration create_registration(const SecretScalar &secret_key, std::uint64_t i
 bool verify_registration(const Registration &registration, const PublicBytes &registry_id) {
     if (!valid_context(registry_id) || registration.index == 0 ||
         !valid_public_point(registration.public_key, false) ||
-        !valid_public_point(registration.proof.commitment, false) ||
+        !valid_public_point(registration.proof.commitment, true) ||
         !valid_public_scalar(registration.proof.response))
         return false;
     const auto challenge = scalar_challenge(pop_transcript(registration, registry_id), false);

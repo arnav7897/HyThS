@@ -8,8 +8,10 @@ int main() {
         return EXIT_FAILURE;
     for (std::uint32_t n = 1; n <= 65535; ++n) {
         const auto d = hta::dimensions(n, n);
-        if (!d || !(n < (1u << d->ell)) || !(n >= (1u << (d->ell - 1))) || d->N != n + d->ell + 1 ||
-            d->generators != 2 * d->N + 1 || !hta::dimensions(n, 1) || hta::dimensions(n, n + 1))
+        if (!d || !(n < (1u << d->ell)) || !(n >= (1u << (d->ell - 1))) ||
+            d->N != (1u << d->kappa) || d->N < n + d->ell ||
+            (d->kappa && (d->N >> 1) >= n + d->ell) ||
+            d->generators != 2 * d->N + 3 || !hta::dimensions(n, 1) || hta::dimensions(n, n + 1))
             return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;

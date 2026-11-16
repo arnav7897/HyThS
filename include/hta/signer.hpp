@@ -18,6 +18,14 @@ struct RoundOneCommitments {
     PublicBytes second;
 };
 
+struct SignerTimings {
+    std::uint64_t certificate_verify_ns = 0;
+    std::uint64_t mask_linkage_ns = 0;
+    std::uint64_t nonce_generation_ns = 0;
+    std::uint64_t round1_total_ns = 0;
+    std::uint64_t round2_total_ns = 0;
+};
+
 // Research prototype. mcl secret operations are variable-time. Replay protection is process-local
 // and is lost on restart. Used IDs remain until process exit; once capacity is full, new sessions
 // are rejected. Callers must authenticate and pin the roster digest.
@@ -38,9 +46,13 @@ class Signer final {
     std::optional<RoundOneCommitments> round1(const Roster &roster, const PublicBytes &sid,
                                               std::uint32_t threshold, const PublicBytes &message,
                                               const PublicBytes &masked_key,
-                                              const std::vector<std::uint64_t> &subset);
+                                              const std::vector<std::uint64_t> &subset, const PublicBytes &generator_context,
+                                              const PublicBytes &certificate, std::uint32_t r,
+                                              std::uint32_t mode = 0, const PublicBytes &mask = {},
+                                              SignerTimings *timings = nullptr);
     std::optional<PublicBytes> round2(const PublicBytes &sid, const PublicBytes &aggregate_first,
-                                      const PublicBytes &aggregate_second);
+                                      const PublicBytes &aggregate_second,
+                                      SignerTimings *timings = nullptr);
     // Cancel a live session and retain its spent session ID.
     bool cancel(const PublicBytes &sid);
 
@@ -52,6 +64,7 @@ class Signer final {
         PublicBytes roster_digest;
         PublicBytes masked_key;
         PublicBytes message;
+        PublicBytes certificate;
         std::uint32_t threshold;
         std::chrono::steady_clock::time_point expires;
         std::size_t accounted_bytes;

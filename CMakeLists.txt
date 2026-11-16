@@ -81,6 +81,7 @@ option(HTA_OPCOUNTERS "Count successful high-level backend operations" OFF)
 option(HTA_BATCH_VERIFY "Enable randomized batch signature verification" ON)
 option(HTA_GENERATOR_CACHE "Cache one derived generator set for repeated statements" ON)
 option(HTA_PUBLIC_FIXED_BASE "Precompute the public secp256k1 generator" ON)
+option(HTA_BUILD_AUDIT_V5_ARTIFACTS "Build audit-v5 protocol fixtures, tests and tools" OFF)
 if(HTA_PUBLIC_FIXED_BASE)
   target_compile_definitions(hta_secp256k1_public PRIVATE HTA_PUBLIC_FIXED_BASE=1)
 endif()
@@ -157,7 +158,9 @@ target_include_directories(hta_signer PUBLIC include)
 target_compile_features(hta_signer PUBLIC cxx_std_17)
 target_link_libraries(hta_signer PUBLIC hta_registration PRIVATE hta_secret_group
                       hta_scalar_challenge hta_framing OpenSSL::Crypto Threads::Threads)
-add_executable(signer_test tests/signer_test.cpp)
+if(HTA_BUILD_AUDIT_V5_ARTIFACTS)
+  add_executable(signer_test tests/signer_test.cpp)
+endif()
 add_library(hta_coordinator src/coordinator.cpp)
 target_include_directories(hta_coordinator PUBLIC include)
 target_compile_features(hta_coordinator PUBLIC cxx_std_17)
@@ -180,40 +183,56 @@ target_include_directories(hta_protocol_encoding PUBLIC include)
 target_compile_features(hta_protocol_encoding PUBLIC cxx_std_17)
 target_link_libraries(hta_protocol_encoding PUBLIC hta_authorization PRIVATE hta_parameters
                       hta_secp256k1_public hta_framing)
-target_link_libraries(signer_test PRIVATE hta_coordinator hta_authorization
-                      hta_protocol_encoding Threads::Threads)
-add_test(NAME signer COMMAND signer_test)
-add_executable(phase5_regression_test tests/phase5_regression_test.cpp)
-target_link_libraries(phase5_regression_test PRIVATE hta_protocol_encoding Threads::Threads)
-add_test(NAME phase5_regression COMMAND phase5_regression_test)
-add_executable(verification_differential_test tests/verification_differential_test.cpp)
-target_link_libraries(verification_differential_test PRIVATE hta_protocol_encoding)
-add_test(NAME verification_differential COMMAND verification_differential_test)
+if(HTA_BUILD_AUDIT_V5_ARTIFACTS)
+  target_link_libraries(signer_test PRIVATE hta_coordinator hta_authorization
+                        hta_protocol_encoding Threads::Threads)
+  add_test(NAME signer COMMAND signer_test)
+  add_executable(phase5_regression_test tests/phase5_regression_test.cpp)
+  target_link_libraries(phase5_regression_test PRIVATE hta_protocol_encoding Threads::Threads)
+  add_test(NAME phase5_regression COMMAND phase5_regression_test)
+  add_executable(verification_differential_test tests/verification_differential_test.cpp)
+  target_link_libraries(verification_differential_test PRIVATE hta_protocol_encoding)
+  add_test(NAME verification_differential COMMAND verification_differential_test)
+endif()
 add_executable(protocol_encoding_test tests/protocol_encoding_test.cpp)
 target_compile_definitions(protocol_encoding_test PRIVATE
                            HTA_VECTOR_FILE="${CMAKE_CURRENT_SOURCE_DIR}/tests/vectors/phase3-wire-vectors.tsv")
 target_link_libraries(protocol_encoding_test PRIVATE hta_protocol_encoding)
 add_test(NAME protocol_encoding COMMAND protocol_encoding_test)
 
-add_executable(authorization_simulator_test tests/authorization_simulator_test.cpp)
-target_include_directories(authorization_simulator_test PRIVATE src)
-target_link_libraries(authorization_simulator_test PRIVATE hta_authorization OpenSSL::Crypto)
-add_test(NAME authorization_simulator COMMAND authorization_simulator_test)
+add_executable(asiaccs27_r0_test tests/asiaccs27_r0_test.cpp)
+target_link_libraries(asiaccs27_r0_test PRIVATE hta_protocol_encoding Threads::Threads)
+add_test(NAME asiaccs27_r0 COMMAND asiaccs27_r0_test)
 
-add_executable(phase3_kat_generator tools/phase3_kat_generator.cpp)
-target_include_directories(phase3_kat_generator PRIVATE src)
-target_link_libraries(phase3_kat_generator PRIVATE hta_protocol_encoding hta_secret_scalar
-                                                  hta_secret_group OpenSSL::Crypto)
-add_test(NAME phase3_kat
-         COMMAND phase3_kat_generator ${CMAKE_CURRENT_SOURCE_DIR}/tests/kats/phase3-basic.req
-                 --check ${CMAKE_CURRENT_SOURCE_DIR}/tests/kats/phase3-basic.rsp)
+add_executable(asiaccs27_equation_test tests/asiaccs27_equation_test.cpp)
+target_link_libraries(asiaccs27_equation_test PRIVATE hta_protocol_encoding Threads::Threads)
+add_test(NAME asiaccs27_equation COMMAND asiaccs27_equation_test)
 
-add_executable(phase3_completeness tools/phase3_completeness.cpp)
-target_link_libraries(phase3_completeness PRIVATE hta_protocol_encoding)
+add_executable(protocol_fuzz_smoke fuzz/protocol_fuzz.cpp tests/protocol_fuzz_smoke.cpp)
+target_link_libraries(protocol_fuzz_smoke PRIVATE hta_protocol_encoding)
+add_test(NAME protocol_fuzz_smoke COMMAND protocol_fuzz_smoke)
 
-add_executable(phase4_fault_injector tools/phase4_fault_injector.cpp)
-target_link_libraries(phase4_fault_injector PRIVATE hta_protocol_encoding)
-add_test(NAME phase4_fault_injector_smoke COMMAND phase4_fault_injector 1)
+if(HTA_BUILD_AUDIT_V5_ARTIFACTS)
+  add_executable(authorization_simulator_test tests/authorization_simulator_test.cpp)
+  target_include_directories(authorization_simulator_test PRIVATE src)
+  target_link_libraries(authorization_simulator_test PRIVATE hta_authorization OpenSSL::Crypto)
+  add_test(NAME authorization_simulator COMMAND authorization_simulator_test)
+
+  add_executable(phase3_kat_generator tools/phase3_kat_generator.cpp)
+  target_include_directories(phase3_kat_generator PRIVATE src)
+  target_link_libraries(phase3_kat_generator PRIVATE hta_protocol_encoding hta_secret_scalar
+                                                    hta_secret_group OpenSSL::Crypto)
+  add_test(NAME phase3_kat
+           COMMAND phase3_kat_generator ${CMAKE_CURRENT_SOURCE_DIR}/tests/kats/phase3-basic.req
+                   --check ${CMAKE_CURRENT_SOURCE_DIR}/tests/kats/phase3-basic.rsp)
+
+  add_executable(phase3_completeness tools/phase3_completeness.cpp)
+  target_link_libraries(phase3_completeness PRIVATE hta_protocol_encoding)
+
+  add_executable(phase4_fault_injector tools/phase4_fault_injector.cpp)
+  target_link_libraries(phase4_fault_injector PRIVATE hta_protocol_encoding)
+  add_test(NAME phase4_fault_injector_smoke COMMAND phase4_fault_injector 1)
+endif()
 
 if(HTA_INSTRUMENTATION STREQUAL "fuzz")
   add_executable(protocol_fuzz fuzz/protocol_fuzz.cpp)
@@ -226,8 +245,10 @@ if(HTA_BUILD_BENCH)
   add_executable(primitive_bench bench/primitive_bench.cpp)
   target_link_libraries(primitive_bench PRIVATE hta_secp256k1_public hta_scalar_challenge
                                                  hta_hash_to_curve)
-  add_executable(protocol_bench bench/protocol_bench.cpp)
-  target_link_libraries(protocol_bench PRIVATE hta_protocol_encoding)
+  if(HTA_BUILD_AUDIT_V5_ARTIFACTS)
+    add_executable(protocol_bench bench/protocol_bench.cpp)
+    target_link_libraries(protocol_bench PRIVATE hta_protocol_encoding)
+  endif()
   add_executable(proof_base_table_eval bench/proof_base_table_eval.cpp)
   target_link_libraries(proof_base_table_eval PRIVATE hta_generator_derivation
                                                        hta_secp256k1_public hta_parameters

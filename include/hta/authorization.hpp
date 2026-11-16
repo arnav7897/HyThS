@@ -4,6 +4,9 @@
 
 namespace hta {
 struct AuthorizationProof {
+    std::uint32_t r = 0;
+    PublicBytes mu_xi;
+    std::vector<PublicBytes> L, R;
     PublicBytes A;
     PublicBytes S;
     PublicBytes Qs;
@@ -26,15 +29,18 @@ std::optional<AuthorizationProof>
 prove_authorization(const Roster &roster, const PublicBytes &generator_context,
                     std::uint32_t threshold, const PublicBytes &message,
                     const PublicBytes &masked_key, const std::vector<std::uint8_t> &selectors,
-                    const std::vector<std::uint8_t> &surplus_bits, SecretScalar tweak);
+                    const std::vector<std::uint8_t> &surplus_bits, SecretScalar tweak,
+                    std::uint32_t r = 0, ProofTimings *timings = nullptr);
 
 bool verify_authorization(const Roster &roster, const PublicBytes &generator_context,
                           std::uint32_t threshold, const PublicBytes &message,
-                          const PublicBytes &masked_key, const AuthorizationProof &proof);
+                          const PublicBytes &masked_key, const AuthorizationProof &proof,
+                          std::uint32_t r = 0, VerificationTimings *timings = nullptr);
 
 bool verify_signature(const Roster &roster, const PublicBytes &generator_context,
                       std::uint32_t threshold, const PublicBytes &message,
-                      const FinalSignature &signature);
+                      const FinalSignature &signature, std::uint32_t r = 0,
+                      VerificationTimings *timings = nullptr);
 
 // Randomized verification of several signatures sharing roster, context, and threshold.
 // Uses four independent CSPRNG coefficients per signature; malformed or oversized batches reject.

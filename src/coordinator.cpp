@@ -1,6 +1,9 @@
 #include "hta/coordinator.hpp"
 
 #include "hta/framing.hpp"
+#include "hta/authorization.hpp"
+#include "hta/protocol_encoding.hpp"
+#include "hta/parameters.hpp"
 #include "hta/scalar_challenge.hpp"
 #include "hta/secp256k1_public.hpp"
 #include "hta/secret_group.hpp"
@@ -43,7 +46,8 @@ std::optional<PublicBytes> checked_roster_digest(const Roster &roster) {
 
 PublicBytes make_context(const PublicBytes &sid, const PublicBytes &digest, std::uint32_t threshold,
                          const PublicBytes &message, const PublicBytes &masked_key,
-                         const std::vector<std::uint64_t> &subset) {
+                         const std::vector<std::uint64_t> &subset,
+                         const PublicBytes &certificate) {
     PublicBytes subset_payload;
     for (const auto index : subset) {
         const auto encoded = frame_integer(index);
@@ -52,7 +56,7 @@ PublicBytes make_context(const PublicBytes &sid, const PublicBytes &digest, std:
     const auto subset_transcript = transcript("SUBSET", {frame(6, subset_payload)});
     return transcript("CTX",
                       {frame(2, sid), frame(2, digest), frame_integer(threshold), frame(2, message),
-                       point_field(masked_key), frame(2, subset_transcript)});
+                       point_field(masked_key), frame(2, subset_transcript), frame(2, certificate)});
 }
 
 std::optional<PublicBytes> add(const PublicBytes &left, const PublicBytes &right) {
@@ -63,10 +67,11 @@ std::optional<PublicBytes> add(const PublicBytes &left, const PublicBytes &right
 CoordinatorSession::CoordinatorSession(PublicBytes digest, std::vector<PublicBytes> roster_keys,
                                        std::uint32_t threshold, PublicBytes message,
                                        std::vector<std::uint64_t> subset, PublicBytes masked_key,
-                                       SecretScalar tweak, PublicBytes context)
+                                       SecretScalar tweak, PublicBytes context, PublicBytes certificate)
     : digest_(std::move(digest)), roster_keys_(std::move(roster_keys)), threshold_(threshold),
       message_(std::move(message)), subset_(std::move(subset)), masked_key_(std::move(masked_key)),
-      tweak_(std::move(tweak)), context_(std::move(context)) {}
+      tweak_(std::move(tweak)), context_(std::move(context)),
+      certificate_(std::move(certificate)) {}
 
 void CoordinatorSession::close() noexcept {
     state_ = State::closed;
@@ -77,8 +82,9 @@ void CoordinatorSession::close() noexcept {
 std::optional<CoordinatorSession>
 CoordinatorSession::begin(const Roster &roster, const PublicBytes &sid, std::uint32_t threshold,
                           const PublicBytes &message, std::vector<std::uint64_t> subset,
-                          SecretScalar tweak) {
-    if (!tweak.valid() || sid.empty() || sid.size() > 256 || message.size() > maximum_message ||
+                          SecretScalar tweak, const PublicBytes &generator_context, std::uint32_t r,
+                          ProofTimings *timings) {
+    if (!tweak.valid(false) || sid.empty() || sid.size() > 256 || message.size() > maximum_message ||
         roster.public_keys.empty() || roster.public_keys.size() > 65535 || threshold == 0 ||
         threshold > roster.public_keys.size() || subset.empty() || subset.size() < threshold ||
         !std::is_sorted(subset.begin(), subset.end()) ||
@@ -100,9 +106,30 @@ CoordinatorSession::begin(const Roster &roster, const PublicBytes &sid, std::uin
     const auto masked_key = add(selected_key, tweak_point);
     if (!masked_key || !valid_public_point(*masked_key, false))
         return std::nullopt;
-    auto context = make_context(sid, *digest, threshold, message, *masked_key, subset);
+    const auto dims = dimensions(static_cast<std::uint32_t>(roster.public_keys.size()), threshold);
+    if (!dims || r > dims->kappa)
+        return std::nullopt;
+    std::vector<std::uint8_t> selectors(roster.public_keys.size(), 0);
+    for (const auto index : subset)
+        selectors[index - 1] = 1;
+    std::vector<std::uint8_t> surplus_bits(dims->ell, 0);
+    const auto surplus = subset.size() - threshold;
+    for (std::uint32_t j = 0; j < dims->ell; ++j)
+        surplus_bits[j] = static_cast<std::uint8_t>((surplus >> j) & 1);
+    auto proof_tweak = SecretScalar::from_canonical(tweak.bytes());
+    const auto proof = prove_authorization(roster, generator_context, threshold, message,
+                                           *masked_key, selectors, surplus_bits,
+                                           std::move(proof_tweak), r, timings);
+    if (!proof)
+        return std::nullopt;
+    auto certificate = encode_authorization_proof(
+        *proof, static_cast<std::uint32_t>(roster.public_keys.size()), r);
+    if (!certificate)
+        return std::nullopt;
+    auto context = make_context(sid, *digest, threshold, message, *masked_key, subset, *certificate);
     return CoordinatorSession(*digest, roster.public_keys, threshold, message, std::move(subset),
-                              *masked_key, std::move(tweak), std::move(context));
+                              *masked_key, std::move(tweak), std::move(context),
+                              std::move(*certificate));
 }
 
 std::optional<AggregateCommitments> CoordinatorSession::collect_commitments(
@@ -146,7 +173,7 @@ std::optional<AggregateCommitments> CoordinatorSession::collect_commitments(
     }
     const auto signature_input =
         transcript("SIG", {frame(2, digest_), point_field(masked_key_), frame_integer(threshold_),
-                           point_field(*nonce), frame(2, message_)});
+                           point_field(*nonce), frame(2, message_), frame(2, certificate_)});
     challenge_ = scalar_challenge(signature_input, false);
     nonce_challenge_ = beta_bytes;
     nonce_ = *nonce;

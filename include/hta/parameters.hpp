@@ -8,7 +8,8 @@ struct Dimensions {
     std::uint32_t ell;
     std::uint32_t N;
     std::uint32_t generators;
+    std::uint32_t kappa;
 };
-// Draft secp256k1 suite, audit v5 equations (1) and (2).
+// ASIACCS27 secp256k1 suite, equations (3.1) and (3.2).
 std::optional<Dimensions> dimensions(std::uint32_t n, std::uint32_t threshold) noexcept;
 } // namespace hta

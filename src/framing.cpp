@@ -39,7 +39,7 @@ bool is_canonical_scalar(const std::vector<std::uint8_t> &encoded) noexcept {
 
 std::vector<std::uint8_t> transcript(const std::string &label,
                                      const std::vector<std::vector<std::uint8_t>> &fields) {
-    const std::string suite = "HTA-secp256k1-v1";
+    const std::string suite = "HTA-secp256k1-asiaccs27-v1";
     auto payload = frame(2, {suite.begin(), suite.end()});
     const auto framed_label = frame(2, {label.begin(), label.end()});
     if (framed_label.size() > std::numeric_limits<std::uint32_t>::max() - payload.size())

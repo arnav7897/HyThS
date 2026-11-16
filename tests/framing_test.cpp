@@ -2,7 +2,16 @@
 
 #include <cstdlib>
 #include <stdexcept>
+#include <string>
 #include <vector>
+
+static std::vector<std::uint8_t> from_hex(const std::string &hex) {
+    std::vector<std::uint8_t> bytes;
+    bytes.reserve(hex.size() / 2);
+    for (std::size_t i = 0; i + 1 < hex.size(); i += 2)
+        bytes.push_back(static_cast<std::uint8_t>(std::stoul(hex.substr(i, 2), nullptr, 16)));
+    return bytes;
+}
 
 int main() {
     using Bytes = std::vector<std::uint8_t>;
@@ -29,24 +38,18 @@ int main() {
     auto indices = hta::frame_integer(1);
     const auto second = hta::frame_integer(2);
     indices.insert(indices.end(), second.begin(), second.end());
-    const Bytes expected_subset{
-        1,   0,   0,   0,   63,  2,   0,   0,   0,   16, 'H', 'T', 'A', '-', 's', 'e', 'c',
-        'p', '2', '5', '6', 'k', '1', '-', 'v', '1', 2,  0,   0,   0,   6,   'S', 'U', 'B',
-        'S', 'E', 'T', 6,   0,   0,   0,   26,  3,   0,  0,   0,   8,   0,   0,   0,   0,
-        0,   0,   0,   1,   3,   0,   0,   0,   8,   0,  0,   0,   0,   0,   0,   0,   2};
+    const Bytes expected_subset = from_hex(
+        "0100000049020000001a4854412d736563703235366b312d6173696163637332372d7631"
+        "0200000006535542534554060000001a0300000008000000000000000103000000080000000000000002");
     if (hta::transcript("SUBSET", {hta::frame(6, indices)}) != expected_subset)
         return EXIT_FAILURE;
     const Bytes base_point{0x02, 0x79, 0xbe, 0x66, 0x7e, 0xf9, 0xdc, 0xbb, 0xac, 0x55, 0xa0,
                            0x62, 0x95, 0xce, 0x87, 0x0b, 0x07, 0x02, 0x9b, 0xfc, 0xdb, 0x2d,
                            0xce, 0x28, 0xd9, 0x59, 0xf2, 0x81, 0x5b, 0x16, 0xf8, 0x17, 0x98};
-    const Bytes expected_roster{
-        1,    0,    0,    0,    88,   2,    0,    0,    0,    16,   'H',  'T',  'A',  '-',
-        's',  'e',  'c',  'p',  '2',  '5',  '6',  'k',  '1',  '-',  'v',  '1',  2,    0,
-        0,    0,    6,    'R',  'O',  'S',  'T',  'E',  'R',  3,    0,    0,    0,    8,
-        0,    0,    0,    0,    0,    0,    0,    1,    6,    0,    0,    0,    38,   4,
-        0,    0,    0,    33,   0x02, 0x79, 0xbe, 0x66, 0x7e, 0xf9, 0xdc, 0xbb, 0xac, 0x55,
-        0xa0, 0x62, 0x95, 0xce, 0x87, 0x0b, 0x07, 0x02, 0x9b, 0xfc, 0xdb, 0x2d, 0xce, 0x28,
-        0xd9, 0x59, 0xf2, 0x81, 0x5b, 0x16, 0xf8, 0x17, 0x98};
+    const Bytes expected_roster = from_hex(
+        "0100000062020000001a4854412d736563703235366b312d6173696163637332372d7631"
+        "0200000006524f535445520300000008000000000000000106000000260400000021"
+        "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798");
     if (hta::transcript("ROSTER", {hta::frame_integer(1),
                                    hta::frame(6, hta::frame(4, base_point))}) != expected_roster)
         return EXIT_FAILURE;
