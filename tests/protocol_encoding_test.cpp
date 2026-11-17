@@ -160,14 +160,17 @@ int main() {
         !round_two_request_wire || !round_two_response_wire || !proof_wire || !signature_wire)
         return 1;
     if (!hta::decode_registration(*registration_wire) ||
-        !hta::decode_round_one_request(*round_one_request_wire,1) ||
+        !hta::decode_round_one_request(*round_one_request_wire, 1) ||
         !hta::decode_round_one_response(*round_one_response_wire) ||
         !hta::decode_round_two_request(*round_two_request_wire) ||
         !hta::decode_round_two_response(*round_two_response_wire) ||
-        !hta::decode_authorization_proof(*proof_wire,1,0) ||
-        !hta::decode_signature(*signature_wire,1,0)) return 1;
-    auto malformed=*proof_wire; malformed.pop_back();
-    if (hta::decode_authorization_proof(malformed,1,0) ||
-        hta::decode_authorization_proof(*proof_wire,1,1)) return 1;
+        !hta::decode_authorization_proof(*proof_wire, 1, 0) ||
+        !hta::decode_signature(*signature_wire, 1, 0))
+        return 1;
+    auto malformed = *proof_wire;
+    malformed.pop_back();
+    if (hta::decode_authorization_proof(malformed, 1, 0) ||
+        hta::decode_authorization_proof(*proof_wire, 1, 1))
+        return 1;
     return 0;
 }

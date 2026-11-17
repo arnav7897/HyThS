@@ -95,14 +95,13 @@ bool run_case(unsigned n, unsigned threshold, unsigned count) {
         for (const auto index : {std::size_t{0}, size / 2, size - 1}) {
             auto invalid_batch = batch;
             invalid_batch[index].schnorr.response.back() ^= 1;
-            if (batch_verify_signatures(*roster, context, threshold, batch_messages,
-                                        invalid_batch))
+            if (batch_verify_signatures(*roster, context, threshold, batch_messages, invalid_batch))
                 return false;
         }
     }
-    if (batch_verify_signatures(*roster, context, threshold,
-                                std::vector<PublicBytes>(65, message),
-                                std::vector<FinalSignature>(65, valid)))
+    if (batch_verify_signatures(
+            *roster, context, threshold, std::vector<PublicBytes>(65, message),
+            std::vector<FinalSignature>(65, valid)))
         return false;
     for (unsigned field = 0; field < 11; ++field) {
         auto altered = valid;
