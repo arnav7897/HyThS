@@ -10,6 +10,20 @@ FROST signature size is 65 bytes at every tested size. ASIACCS27 full-folding si
 
 Timings are not direct speed ratios. FROST's reported session total includes all share checks and final Schnorr verification. ASIACCS27 proof generation, signer certificate checks, and full signature-plus-certificate verification are reported as separate stages. These checks establish different statements.
 
+## Time and space complexity at a glance
+
+Here, `n` is the number of registered signers, `t` is the threshold and active signer count, `N` is the proof's power-of-two vector size, and `r` is the number of proof-folding rounds. **TC** means time complexity: how computation grows as these values grow. **SC** means space complexity: how stored keys and temporary session data grow. `O(n)` means roughly proportional to n; `O(1)` means the amount does not grow with n. Big O describes growth, not elapsed time or a memory measurement.
+
+| Measure | ASIACCS27 | FROST | Plain meaning |
+|---|---|---|---|
+| TC: prove/sign | Authorization proof and verification require roster-sized work, O(N+n). Signer certificate verification is also O(N+n). | Each signer does O(1) nonce/response arithmetic; binding-factor work reads an O(t) commitment transcript. Coordinator aggregates O(t) shares. | ASIACCS27 does more work as the roster grows; FROST keeps final signing arithmetic small per signer. |
+| TC: final verify | O(N+n), including the authorization certificate. | O(1) Schnorr equation once the group key is known. | FROST verifier work does not grow with the number of participants. |
+| SC: signature | O(r + N/2^r) proof points/scalars; full folding gives a compact, slowly growing signature. | O(1): 65 bytes in this encoding. | FROST sends a fixed-size final signature; ASIACCS27 carries an authorization proof. |
+| SC: public state | O(n+N): roster keys plus `2N+3` generators. | O(n): group public key plus participant verification shares. | Both keep public participant data; ASIACCS27 also keeps a roster-sized generator set. |
+| SC: one live session | O(N+n) proof/verifier working state; O(1) signer secret/nonces. | O(t) coordinator commitment/share records; O(1) signer secret/nonces. | The coordinator holds one record per active signer in either protocol. |
+
+The later tables give encoded byte counts and measured medians. Peak RSS was not measured, so SC values are analytic storage bounds, not observed process memory.
+
 ## Benchmark method
 
 | Item | ASIACCS27 | FROST |
@@ -37,6 +51,18 @@ Times are median milliseconds with p25–p75. Signature and request sizes are ac
 | 4,096 | 2,731 | 13 | 5,892.27 [5,222.22, 6,413.10] | 660.80 [579.58, 745.20] | 654.79 [553.22, 763.18] | 1,642 B | 37,263 B | 1,896.12 [1,793.67, 2,017.73] | 0.155 [0.135, 0.167] | 65 B |
 
 FROST session totals are summed per sample before calculating quantiles. They include Round 1, binding-factor derivation, group commitment, Round 2, every share check, response aggregation, and final verification. The final-verification column is also shown separately.
+
+### Total sequential protocol time
+
+Each total is assembled per sample, then summarized with median and p25–p75. ASIACCS27 total is `serial_end_to_end_ns + full_verify_ns`: proof creation, one certificate check, simulated nonce/share work for t signers, response aggregation, and final signature-plus-certificate verification. FROST total includes Round 1, binding factors, group commitment, Round 2, all share checks, response aggregation, and final signature verification. Both exclude setup and network delay. They are whole-path measurements, not exact like-for-like latency: the protocols verify different statements and the harness runs all actors sequentially in one process.
+
+| n | t | ASIACCS27 total | FROST total |
+|---:|---:|---:|---:|
+| 64 | 43 | 119.92 ms [119.28, 120.87] | 30.17 ms [29.39, 33.00] |
+| 256 | 171 | 425.88 ms [424.56, 427.49] | 116.59 ms [100.65, 131.30] |
+| 1,024 | 683 | 1,615.17 ms [1,611.95, 1,619.94] | 475.78 ms [441.58, 527.36] |
+| 2,048 | 1,366 | 2,364.22 ms [2,312.17, 2,443.96] | 833.14 ms [684.49, 928.18] |
+| 4,096 | 2,731 | 8,754.43 ms [7,752.51, 9,410.29] | 1,896.12 ms [1,793.67, 2,017.73] |
 
 ## Table B: folding sweep at n=2,048
 

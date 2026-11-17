@@ -51,6 +51,11 @@ for path in files:
         row[col+"_q1"]=quantile(vals,.25);row[col+"_q3"]=quantile(vals,.75)
         if col.endswith("_ns"):
             row[col+"_p95"]=quantile(vals,.95)
+    serial_total=[d["serial_end_to_end_ns"]+d["full_verify_ns"] for d in data]
+    row["serial_total_ns_median"]=statistics.median(serial_total)
+    row["serial_total_ns_q1"]=quantile(serial_total,.25)
+    row["serial_total_ns_q3"]=quantile(serial_total,.75)
+    row["serial_total_ns_p95"]=quantile(serial_total,.95)
     for j in range(data[0]["r"]):
         vals=[d["fold_round_ns"][j] for d in data]
         key=f"fold_round_{j}_ns"
