@@ -1,0 +1,4 @@
+source,metric,samples,median,p25,p75,p95
+docs/benchmarks/asiaccs27-20261116/registration-20261116.jsonl,registration_ns,100,65293.5,64893.0,66132.5,77447.25
+docs/benchmarks/asiaccs27-20261116/registration-20261116.jsonl,pop_verify_ns,100,56218.5,55890.5,57191.25,66873.04999999999
+docs/benchmarks/asiaccs27-20261116/registration-20261116.jsonl,registration_bytes,100,175.0,175.0,175.0,175.0

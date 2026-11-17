@@ -1,0 +1,4 @@
+source,metric,samples,median,p25,p75,p95
+docs/benchmarks/asiaccs27-20261116/release-plain-schnorr.jsonl,sign_ns,100,41664.0,40189.25,42445.5,48768.49999999999
+docs/benchmarks/asiaccs27-20261116/release-plain-schnorr.jsonl,verify_ns,100,67557.0,64671.5,68535.5,88719.54999999999
+docs/benchmarks/asiaccs27-20261116/release-plain-schnorr.jsonl,signature_payload_bytes,100,65.0,65.0,65.0,65.0
