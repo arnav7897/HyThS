@@ -24,6 +24,25 @@ Here, `n` is the number of registered signers, `t` is the threshold and active s
 
 The later tables give encoded byte counts and measured medians. Peak RSS was not measured, so SC values are analytic storage bounds, not observed process memory.
 
+## Aggregation, setup, and verification only
+
+Times are median milliseconds with p25–p75. `Aggregation` sums nonce/group commitment work and response aggregation; FROST also includes binding-factor calculation. `Verification` sums certificate verification, all share checks, and final verification. `Total` adds setup, aggregation, and verification per sample. It excludes proof generation and other stages, so it is not the whole-protocol runtime.
+
+| n | Scheme | Aggregation | Setup | Verification | Total |
+|---:|---|---:|---:|---:|---:|
+| 64 | ASIACCS27 | 2.709 [2.674–2.766] | 0.122 per key | 31.363 [30.918–32.012] | 34.334 [33.775–34.926] |
+| 64 | FROST | 7.389 [7.159–7.945] | 20.402 per group† | 12.545 [12.234–13.621] | 40.339 [39.825–42.002] |
+| 256 | ASIACCS27 | 10.152 [10.058–10.440] | 0.122 per key | 101.319 [100.811–102.067] | 111.678 [111.243–112.440] |
+| 256 | FROST | 28.445 [24.440–32.001] | 118.453 per group† | 49.342 [40.244–54.879] | 196.426 [183.632–205.379] |
+| 1,024 | ASIACCS27 | 40.191 [39.801–40.553] | 0.122 per key | 382.669 [381.168–383.753] | 422.878 [421.548–424.031] |
+| 1,024 | FROST | 115.727 [105.897–127.150] | 870.021 per group† | 194.325 [176.881–212.814] | 1,182.526 [1,153.006–1,206.308] |
+| 2,048 | ASIACCS27 | 59.996 [58.244–62.075] | 0.122 per key | 559.578 [544.044–577.341] | 619.271 [602.704–640.506] |
+| 2,048 | FROST | 204.510 [150.052–235.297] | 5,262.240 per group† | 333.195 [263.984–392.188] | 5,802.117 [5,691.959–5,889.830] |
+| 4,096 | ASIACCS27 | 221.444 [182.644–261.038] | 0.122 per key | 2,019.641 [1,750.831–2,292.427] | 2,243.961 [1,962.630–2,536.181] |
+| 4,096 | FROST | 454.406 [427.454–494.117] | 16,577.928 per group† | 768.885 [723.184–837.545] | 17,810.438 [17,745.524–17,910.163] |
+
+**Setup scope:** ASIACCS27 setup is PoP creation plus verification for one key, measured over 100 keys. †FROST setup is one trusted-dealer Shamir setup for all n participants; the driver records one setup observation per n. The total column adds each setup figure as reported, so setup-inclusive totals do not compare equal scopes. ASIACCS27 full-roster setup was not measured. Compare aggregation and verification for per-session work. The [raw-derived stage summary](docs/benchmarks/asiaccs27-20261116/aggregation-setup-verification.csv) records these definitions and sample counts.
+
 ## Benchmark method
 
 | Item | ASIACCS27 | FROST |
@@ -147,7 +166,7 @@ taskset -c 2 ./build-asiaccs-release/asiaccs27_frost_baseline 4096 100 > docs/be
 python3 tools/summarize_asiaccs27.py
 ```
 
-The summarizer regenerates `summary.csv`, `tables.md`, `registration-summary.csv`, `baseline-summary.csv`, and `frost-summary.csv`. Complete collected matrix: Table A has n={64,256,1024,2048,4096} at r=kappa; Table B has n=2048 at r={0,9,12}. Matching FROST runs have 100 samples at each n.
+The summarizer regenerates `summary.csv`, `tables.md`, `registration-summary.csv`, `baseline-summary.csv`, `frost-summary.csv`, and `aggregation-setup-verification.csv`. Complete collected matrix: Table A has n={64,256,1024,2048,4096} at r=kappa; Table B has n=2048 at r={0,9,12}. Matching FROST runs have 100 samples at each n.
 
 ## Appendix A: User-supplied benchmark specification
 

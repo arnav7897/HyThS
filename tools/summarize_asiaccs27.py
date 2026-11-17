@@ -180,3 +180,52 @@ if frost_rows:
         f.write("source,n,t,metric,samples,median,p25,p75,p95\n")
         for row in frost_rows:f.write(",".join(map(str,row))+"\n")
     print(f"wrote FROST summary to {path}")
+
+# Focused setup/aggregation/verification comparison. HTA setup is measured
+# per registered key; FROST setup is one trusted-dealer run for the full group.
+comparison_rows=[]
+registration_data=[json.loads(line) for path in registration_files
+                  for line in open(path) if line.strip()]
+hta_setup=[d["registration_ns"]+d["pop_verify_ns"] for d in registration_data]
+hta_cells={}
+for path in glob.glob("docs/benchmarks/asiaccs27-20261116/release-n*-r*.jsonl"):
+    data=[json.loads(line) for line in open(path) if line.strip()]
+    if len(data)<100 or not data or "r" not in data[0]:continue
+    n=data[0]["n"]
+    if n not in hta_cells or data[0]["r"]>hta_cells[n][0]:
+        hta_cells[n]=(data[0]["r"],data,path)
+
+def append_comparison(source,n,t,scheme,aggregation,setup,verification,total,basis):
+    for metric,vals in (("aggregation",aggregation),("setup",setup),
+                        ("verification",verification),("total",total)):
+        comparison_rows.append((source,n,t,scheme,metric,len(vals),statistics.median(vals),
+                                quantile(vals,.25),quantile(vals,.75),basis))
+
+for n,(r,data,source) in sorted(hta_cells.items()):
+    t=data[0]["t"]
+    aggregation=[d["nonce_aggregation_ns"]+d["response_aggregation_ns"] for d in data]
+    verification=[d["certificate_verify_ns"]+d["share_verification_ns"]+
+                  d["full_verify_ns"] for d in data]
+    setup=[hta_setup[i%len(hta_setup)] for i in range(len(data))]
+    total=[aggregation[i]+verification[i]+setup[i] for i in range(len(data))]
+    append_comparison(source,n,t,"ASIACCS27",aggregation,setup,verification,total,
+                      "PoP create+verify per key")
+
+for path in frost_files:
+    data=[json.loads(line) for line in open(path) if line.strip()]
+    if len(data)<100:continue
+    n=data[0]["n"];t=data[0]["t"]
+    aggregation=[d["binding_factors_ns"]+d["group_commitment_ns"]+d["aggregate_ns"]
+                 for d in data]
+    verification=[d["share_verify_ns"]+d["verify_ns"] for d in data]
+    setup=[data[0]["dealer_setup_ns"]]
+    total=[aggregation[i]+verification[i]+setup[0] for i in range(len(data))]
+    append_comparison(path,n,t,"FROST",aggregation,setup,verification,total,
+                      "trusted dealer setup for full n-party group")
+
+if comparison_rows:
+    path="docs/benchmarks/asiaccs27-20261116/aggregation-setup-verification.csv"
+    with open(path,"w") as f:
+        f.write("source,n,t,scheme,metric,samples,median_ns,p25_ns,p75_ns,setup_basis\n")
+        for row in comparison_rows:f.write(",".join(map(str,row))+"\n")
+    print(f"wrote stage comparison to {path}")

@@ -1,0 +1,41 @@
+source,n,t,scheme,metric,samples,median_ns,p25_ns,p75_ns,setup_basis
+docs/benchmarks/asiaccs27-20261116/release-n64-r7.jsonl,64,43,ASIACCS27,aggregation,100,2708864.5,2674421.5,2765953.0,PoP create+verify per key
+docs/benchmarks/asiaccs27-20261116/release-n64-r7.jsonl,64,43,ASIACCS27,setup,100,121646.5,120868.25,124248.25,PoP create+verify per key
+docs/benchmarks/asiaccs27-20261116/release-n64-r7.jsonl,64,43,ASIACCS27,verification,100,31363173.5,30917511.75,32011577.25,PoP create+verify per key
+docs/benchmarks/asiaccs27-20261116/release-n64-r7.jsonl,64,43,ASIACCS27,total,100,34334450.0,33774850.75,34925813.5,PoP create+verify per key
+docs/benchmarks/asiaccs27-20261116/release-n256-r9.jsonl,256,171,ASIACCS27,aggregation,100,10151608.5,10057997.5,10440241.25,PoP create+verify per key
+docs/benchmarks/asiaccs27-20261116/release-n256-r9.jsonl,256,171,ASIACCS27,setup,100,121646.5,120868.25,124248.25,PoP create+verify per key
+docs/benchmarks/asiaccs27-20261116/release-n256-r9.jsonl,256,171,ASIACCS27,verification,100,101319399.5,100810523.25,102067375.75,PoP create+verify per key
+docs/benchmarks/asiaccs27-20261116/release-n256-r9.jsonl,256,171,ASIACCS27,total,100,111678427.0,111242638.75,112439893.75,PoP create+verify per key
+docs/benchmarks/asiaccs27-20261116/release-n1024-r11.jsonl,1024,683,ASIACCS27,aggregation,100,40190909.0,39800920.25,40552903.0,PoP create+verify per key
+docs/benchmarks/asiaccs27-20261116/release-n1024-r11.jsonl,1024,683,ASIACCS27,setup,100,121646.5,120868.25,124248.25,PoP create+verify per key
+docs/benchmarks/asiaccs27-20261116/release-n1024-r11.jsonl,1024,683,ASIACCS27,verification,100,382668739.5,381167787.75,383752838.75,PoP create+verify per key
+docs/benchmarks/asiaccs27-20261116/release-n1024-r11.jsonl,1024,683,ASIACCS27,total,100,422877702.0,421547874.5,424031043.75,PoP create+verify per key
+docs/benchmarks/asiaccs27-20261116/release-n2048-r12.jsonl,2048,1366,ASIACCS27,aggregation,100,59995840.0,58244462.5,62075428.0,PoP create+verify per key
+docs/benchmarks/asiaccs27-20261116/release-n2048-r12.jsonl,2048,1366,ASIACCS27,setup,100,121646.5,120868.25,124248.25,PoP create+verify per key
+docs/benchmarks/asiaccs27-20261116/release-n2048-r12.jsonl,2048,1366,ASIACCS27,verification,100,559577800.0,544043960.75,577340641.25,PoP create+verify per key
+docs/benchmarks/asiaccs27-20261116/release-n2048-r12.jsonl,2048,1366,ASIACCS27,total,100,619271407.5,602703605.5,640506085.5,PoP create+verify per key
+docs/benchmarks/asiaccs27-20261116/release-n4096-r13.jsonl,4096,2731,ASIACCS27,aggregation,100,221444375.5,182644152.75,261038312.5,PoP create+verify per key
+docs/benchmarks/asiaccs27-20261116/release-n4096-r13.jsonl,4096,2731,ASIACCS27,setup,100,121646.5,120868.25,124248.25,PoP create+verify per key
+docs/benchmarks/asiaccs27-20261116/release-n4096-r13.jsonl,4096,2731,ASIACCS27,verification,100,2019641333.0,1750831224.0,2292427014.75,PoP create+verify per key
+docs/benchmarks/asiaccs27-20261116/release-n4096-r13.jsonl,4096,2731,ASIACCS27,total,100,2243960665.5,1962629977.75,2536183198.25,PoP create+verify per key
+docs/benchmarks/asiaccs27-20261116/release-frost-n256.jsonl,256,171,FROST,aggregation,100,28445498.0,24440162.25,32000514.0,trusted dealer setup for full n-party group
+docs/benchmarks/asiaccs27-20261116/release-frost-n256.jsonl,256,171,FROST,setup,1,118453255,118453255,118453255,trusted dealer setup for full n-party group
+docs/benchmarks/asiaccs27-20261116/release-frost-n256.jsonl,256,171,FROST,verification,100,49341789.0,40243538.5,54878991.0,trusted dealer setup for full n-party group
+docs/benchmarks/asiaccs27-20261116/release-frost-n256.jsonl,256,171,FROST,total,100,196425651.5,183631703.75,205378820.75,trusted dealer setup for full n-party group
+docs/benchmarks/asiaccs27-20261116/release-frost-n2048.jsonl,2048,1366,FROST,aggregation,100,204510264.0,150051774.25,235297422.75,trusted dealer setup for full n-party group
+docs/benchmarks/asiaccs27-20261116/release-frost-n2048.jsonl,2048,1366,FROST,setup,1,5262240182,5262240182,5262240182,trusted dealer setup for full n-party group
+docs/benchmarks/asiaccs27-20261116/release-frost-n2048.jsonl,2048,1366,FROST,verification,100,333194546.5,263984473.5,392188092.0,trusted dealer setup for full n-party group
+docs/benchmarks/asiaccs27-20261116/release-frost-n2048.jsonl,2048,1366,FROST,total,100,5802116565.5,5691958897.75,5889829879.5,trusted dealer setup for full n-party group
+docs/benchmarks/asiaccs27-20261116/release-frost-n4096.jsonl,4096,2731,FROST,aggregation,100,454405519.5,427453638.0,494117247.75,trusted dealer setup for full n-party group
+docs/benchmarks/asiaccs27-20261116/release-frost-n4096.jsonl,4096,2731,FROST,setup,1,16577927771,16577927771,16577927771,trusted dealer setup for full n-party group
+docs/benchmarks/asiaccs27-20261116/release-frost-n4096.jsonl,4096,2731,FROST,verification,100,768885288.5,723183667.0,837544512.0,trusted dealer setup for full n-party group
+docs/benchmarks/asiaccs27-20261116/release-frost-n4096.jsonl,4096,2731,FROST,total,100,17810437714.0,17745523659.25,17910162846.75,trusted dealer setup for full n-party group
+docs/benchmarks/asiaccs27-20261116/release-frost-n64.jsonl,64,43,FROST,aggregation,100,7389302.0,7158743.75,7945141.75,trusted dealer setup for full n-party group
+docs/benchmarks/asiaccs27-20261116/release-frost-n64.jsonl,64,43,FROST,setup,1,20402082,20402082,20402082,trusted dealer setup for full n-party group
+docs/benchmarks/asiaccs27-20261116/release-frost-n64.jsonl,64,43,FROST,verification,100,12544962.5,12233833.75,13621196.0,trusted dealer setup for full n-party group
+docs/benchmarks/asiaccs27-20261116/release-frost-n64.jsonl,64,43,FROST,total,100,40339399.0,39824530.0,42001531.0,trusted dealer setup for full n-party group
+docs/benchmarks/asiaccs27-20261116/release-frost-n1024.jsonl,1024,683,FROST,aggregation,100,115727150.0,105897274.5,127150160.75,trusted dealer setup for full n-party group
+docs/benchmarks/asiaccs27-20261116/release-frost-n1024.jsonl,1024,683,FROST,setup,1,870021244,870021244,870021244,trusted dealer setup for full n-party group
+docs/benchmarks/asiaccs27-20261116/release-frost-n1024.jsonl,1024,683,FROST,verification,100,194324845.5,176880650.75,212813693.5,trusted dealer setup for full n-party group
+docs/benchmarks/asiaccs27-20261116/release-frost-n1024.jsonl,1024,683,FROST,total,100,1182526169.0,1153006405.25,1206308153.5,trusted dealer setup for full n-party group
